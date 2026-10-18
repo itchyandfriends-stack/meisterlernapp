@@ -254,6 +254,17 @@ details.solution summary { cursor: pointer; }
 .qtools { display: flex; gap: 8px; flex-wrap: wrap; }
 .tool { background: transparent; border: 1px solid var(--field-border); color: var(--ink); border-radius: 8px; padding: 8px 12px; min-height: 44px; font-weight: 600; font-size: 15px; }
 .tool[aria-pressed="true"] { background: var(--warn-bg); border-color: var(--accent); }
+
+/* Fachwörter: antippen zeigt die Klartext-Erklärung */
+.gl { background: none; border: 0; padding: 0; margin: 0; font: inherit; color: inherit; text-align: inherit; cursor: pointer;
+  text-decoration: underline dotted; text-decoration-thickness: 2px; text-underline-offset: 4px; text-decoration-color: var(--accent); }
+.gl[aria-expanded="true"] { background: var(--warn-bg); border-radius: 3px; }
+.gl-box { background: var(--warn-bg); border-left: 4px solid var(--accent); border-radius: 8px; padding: 10px 12px; font-size: 15px; font-weight: 400; line-height: 1.45;
+  display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: start; }
+.gl-box button { background: none; border: 0; color: var(--ink); font-size: 22px; line-height: 1; min-width: 44px; min-height: 44px; margin: -10px -8px -10px 0; }
+.gl-list { display: flex; flex-direction: column; gap: 10px; margin: 8px 0 0; }
+.gl-list dt { font-weight: 700; }
+.gl-list dd { margin: 0; font-size: 15px; color: var(--muted); }
 </style>
 </head>
 <body>
@@ -485,7 +496,49 @@ const showInstallHint = () => OWN_SITE && !isInstalled() && S.installHint !== "h
 const $ = (s, el = document) => el.querySelector(s);
 // Leerzeichen vor % und € wird geschützt, damit Zahl und Einheit nicht getrennt umbrechen
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])).replace(/ (?=[%€])/g, " ");
-const eur = (n, d = 2) => n.toLocaleString("de-DE", {minimumFractionDigits: d, maximumFractionDigits: d}) + " €";
+/* ---------- Fachwörter (GLOSSAR in fragen.js) ----------
+   gl() unterstreicht in einem schon maskierten Text jedes Fachwort einmal; antippen zeigt darunter die Erklärung. */
+const GL = typeof GLOSSAR !== "undefined" ? GLOSSAR : [];
+const GL_RE = (() => {
+  try {
+    return {all: new RegExp(`(?<![\\wäöüÄÖÜß-])(?:${GL.map(g => g.r).join("|")})(?![\\wäöüÄÖÜß])`, "gi"),
+      one: GL.map(g => new RegExp(`^(?:${g.r})$`, "i"))};
+  } catch (e) { return null; }   // sehr alte Browser ohne Lookbehind: dann eben ohne Unterstreichung
+})();
+// Im Fragetext erst nach dem Antworten verwenden: manche Erklärungen würden sonst die Lösung verraten (z. B. GmbH → 25.000 €)
+function gl(html) {
+  if (!GL_RE || !GL.length) return html;
+  const used = new Set();
+  return html.replace(GL_RE.all, m => {
+    const i = GL_RE.one.findIndex(re => re.test(m));
+    if (i < 0 || used.has(i)) return m;
+    used.add(i);
+    return `<button type="button" class="gl" data-gl="${i}" aria-expanded="false">${m}</button>`;
+  });
+}
+function glossaryCard() {
+  if (!GL.length) return "";
+  const list = GL.slice().sort((a, b) => a.w.localeCompare(b.w, "de"));
+  return `<details class="card more" style="margin-top:16px"><summary>Fachwörter einfach erklärt (${GL.length})</summary>
+    <p class="small muted">Nach dem Antworten sind Fachwörter in Frage und Erklärung unterstrichen. Tippe sie an, dann siehst du die Erklärung.</p>
+    <dl class="gl-list">${list.map(g => `<div><dt>${esc(g.w)}</dt><dd>${esc(g.d)}</dd></div>`).join("")}</dl></details>`;
+}
+document.addEventListener("click", e => {
+  const close = e.target.closest(".gl-box button");
+  if (close) { const b = document.querySelector('.gl[aria-expanded="true"]'); close.closest(".gl-box").remove(); if (b) { b.setAttribute("aria-expanded", "false"); b.removeAttribute("aria-controls"); b.focus(); } return; }
+  const b = e.target.closest(".gl");
+  if (!b) return;
+  const open = b.getAttribute("aria-expanded") === "true";
+  document.querySelectorAll(".gl-box").forEach(x => x.remove());
+  document.querySelectorAll('.gl[aria-expanded="true"]').forEach(x => { x.setAttribute("aria-expanded", "false"); x.removeAttribute("aria-controls"); });
+  if (open) return;
+  const g = GL[+b.dataset.gl], box = document.createElement("div");
+  box.className = "gl-box"; box.id = "gl-box"; box.setAttribute("role", "status");
+  box.innerHTML = `<span><b>${esc(g.w)}:</b> ${esc(g.d)}</span><button type="button" aria-label="Erklärung schließen">×</button>`;
+  b.setAttribute("aria-expanded", "true"); b.setAttribute("aria-controls", "gl-box");
+  b.closest(".qtext, p").after(box);
+});
+const eur = (n, d = 2) =>n.toLocaleString("de-DE", {minimumFractionDigits: d, maximumFractionDigits: d}) + " €";
 const num = (n, d = 0) => n.toLocaleString("de-DE", {minimumFractionDigits: d, maximumFractionDigits: d});
 const r2 = n => Math.round(n * 100) / 100;
 const pick = a => a[Math.floor(Math.random() * a.length)];
@@ -934,7 +987,7 @@ function renderFragen() {
     <div class="qtools">${markBtn(q)}${voiceTools()}</div>
     <div class="qmeta"><span>Teil ${q.hf.split("-")[0]} · ${esc(HF[q.hf])}</span><span class="pill draft" title="Prüfstatus laut Fragenkatalog: ${esc(q.p || "Entwurf")}">${esc(statusShort(q.p))} · noch nicht vom Dozenten geprüft</span>
       ${s && (answered == null ? s.seen : s.seen - 1) > 0 ? `<span>schon ${answered == null ? s.seen : s.seen - 1}× gesehen</span>` : `<span>neu</span>`}</div>
-    <div class="qtext" id="qtext" tabindex="-1">${esc(q.q)}</div>
+    <div class="qtext" id="qtext" tabindex="-1">${answered == null ? esc(q.q) : gl(esc(q.q))}</div>
     <div class="opts">${order.map((i, pos) => {
       let cls = "", tag = "";
       if (answered != null) {
@@ -946,12 +999,13 @@ function renderFragen() {
     ${answered != null ? `
     <div class="explain" role="status" id="explain" tabindex="-1">
       <div class="verdict ${answered === q.a ? "ok" : "no"}">${answered === q.a ? "Richtig." : "Nicht ganz. Richtig ist " + "ABCD"[order.indexOf(q.a)] + "."}</div>
-      <p>${esc(q.e)}</p>
+      <p>${gl(esc(q.e))}</p>
       <div class="law">${isNorm(q.l) ? "Steht in: " + esc(q.l) : "Thema: " + esc(q.t || q.l)} · Stand 17.10.2026</div>
     </div>
     <button class="btn accent" id="next">${round.pos + 1 < total ? "Nächste Frage" : "Ergebnis ansehen"}</button>` : ""}
   </div>
   ${simEntry()}
+  ${glossaryCard()}
   <p class="small muted" style="margin-top:16px">${Q.length} Fragen im Prototyp. Ziel laut Konzept: etwa 400.</p>`;
   bindSegs(v);
   bindVoice(v, renderFragen);
@@ -1219,10 +1273,10 @@ function renderSimResult(v, head) {
     ${r.wrong.map((id, n) => { const q = qById(id), p = sim.picks[id], ord = sim.order[id];
       return `<div class="wrong-item">
         <div class="row" style="justify-content:space-between"><span class="small muted">${n + 1}. · ${esc(HF[q.hf])}</span>${markBtn(q)}</div>
-        <div class="qtext">${esc(q.q)}</div>
+        <div class="qtext">${gl(esc(q.q))}</div>
         <p class="small"><span class="no-t"><b>${p == null ? "Nicht beantwortet" : "Deine Antwort: " + "ABCD"[ord.indexOf(p)] + ") " + esc(q.o[p])}</b></span><br>
           <span class="ok-t"><b>Richtig: ${"ABCD"[ord.indexOf(q.a)]}) ${esc(q.o[q.a])}</b></span></p>
-        <div class="explain"><p>${esc(q.e)}</p><div class="law">${isNorm(q.l) ? "Steht in: " + esc(q.l) : "Thema: " + esc(q.t || q.l)} · Stand 17.10.2026</div></div>
+        <div class="explain"><p>${gl(esc(q.e))}</p><div class="law">${isNorm(q.l) ? "Steht in: " + esc(q.l) : "Thema: " + esc(q.t || q.l)} · Stand 17.10.2026</div></div>
       </div>`; }).join("")}
   </div>
   <div class="card" style="margin-top:16px">
