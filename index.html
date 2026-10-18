@@ -230,6 +230,9 @@ details.solution summary { cursor: pointer; }
 .side { font-size: 14px; display: flex; flex-direction: column; gap: 4px; border-left: 3px solid var(--line); padding-left: 10px; }
 .side div { font-family: var(--font-mono); font-size: 13px; overflow-wrap: anywhere; }
 
+/* Heute: Fortschritt beim Tagesziel */
+.goal { display: flex; flex-direction: column; gap: 4px; }
+
 /* Bist du bereit? */
 .ready { display: grid; grid-template-columns: 20px 1fr auto; gap: 10px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); }
 .ready:first-of-type { border-top: 0; }
@@ -560,7 +563,7 @@ function renderHeute() {
 
   const tasks = [
     left > 0
-      ? {done: log.q >= perDay, label: `${perDay} Fragen beantworten`, sub: (log.q ? `Heute ${log.q} beantwortet, davon ${log.qr} richtig` : "Heute noch keine beantwortet") + (capped ? ` · Mehr als ${MAX_PER_DAY} am Tag sind zu viel. Übe lieber jeden Tag ein bisschen.` : ""), go: "fragen"}
+      ? {done: log.q >= perDay, label: `${perDay} Fragen beantworten`, sub: (log.q ? `${Math.min(log.q, perDay)} von ${perDay} geschafft, ${log.qr} richtig` : `Noch keine. ${perDay > ROUND_MAX ? `Am besten in ${Math.ceil(perDay / ROUND_MAX)} Runden` : "In einer Runde"} über den großen Knopf oben`) + (capped && !(log.q >= perDay) ? ` · Bis zur Prüfung wären eigentlich mehr nötig, aber mehr als ${MAX_PER_DAY} am Tag schafft man neben der Arbeit kaum. Übe dafür jeden Tag.` : ""), go: "fragen"}
       : {done: false, label: "Prüfung vorbei? Trag deinen neuen Termin ein.", sub: log.q ? `Heute ${log.q} Fragen beantwortet, davon ${log.qr} richtig` : "Du kannst trotzdem weiter üben.", go: "exam"},
     {done: log.calc >= 3, label: "3 Rechenaufgaben lösen", sub: (log.calc ? `Heute ${log.calc} gerechnet, davon ${log.cr} richtig` : "Heute noch nichts gerechnet") + ` · Tipp: ${GEN[sug.type].name}`, go: "rechnen"},
   ];
@@ -568,6 +571,10 @@ function renderHeute() {
   tasks.push({done: log.fall >= 1, label: finalWeek ?"Einen ganzen Fall am Stück lösen (ca. 2 Stunden)" : sunday ? "Sonntag: eine Fallaufgabe bearbeiten" : "Fallaufgabe (freiwillig, ideal am Sonntag)", sub: log.fall ? "Heute geprüft · Punkte siehst du unten" : "Heute noch nicht bearbeitet", go: "faelle"});
   const allDone = left > 0 && tasks.every(t => t.done);
   const n = roundSize();
+  // Der große Knopf arbeitet das Tagesziel bei den Fragen in Runden ab (höchstens ROUND_MAX Fragen am Stück)
+  const qDone = Math.min(log.q, perDay), qGoal = left > 0 && perDay > 0, goalMet = qGoal && log.q >= perDay;
+  const restQ = Math.max(0, perDay - log.q), roundsLeft = Math.ceil(restQ / ROUND_MAX);
+  const bigLabel = simRunning() ? "Prüfungssimulation fortsetzen" : !qGoal ? `Jetzt ${n} Fragen üben` : goalMet ? `Freiwillig weiter: ${n} Fragen` : `Nächste Runde: ${n} Fragen`;
 
   const v = $("#v-heute");
   v.innerHTML = `
@@ -583,7 +590,13 @@ function renderHeute() {
 
   <div class="card">
     <div class="count"><b>${left > 0 ? left : 0}</b><span>${left === 1 ? "Tag" : "Tage"} bis zur Prüfung</span></div>
-    <button class="btn big accent" id="go-big">${simRunning() ? "Prüfungssimulation fortsetzen" : allDone ? "Noch eine Runde üben" : `Jetzt ${n} Fragen üben`}</button>
+    ${qGoal && !simRunning() ? `<div class="goal">
+      <div class="bar-head"><b>Heute geschafft: ${qDone} von ${perDay} Fragen</b><span class="status ${goalMet ? "ok" : ""}">${goalMet ? "✓ Tagesziel erreicht" : ""}</span></div>
+      <div class="bar" role="img" aria-label="${qDone} von ${perDay} Fragen geschafft"><i class="${goalMet ? "ok" : ""}" style="width:${Math.round(qDone / perDay * 100)}%"></i></div>
+    </div>` : ""}
+    <button class="btn big accent" id="go-big">${bigLabel}</button>
+    ${qGoal && !simRunning() ? `<p class="small muted">${goalMet ? "Dein Tagesziel bei den Fragen ist erreicht. Jede weitere Runde ist ein Extra."
+      : `Eine Runde ist ein Teil deines Tagesziels. Noch ${restQ} ${restQ === 1 ? "Frage" : "Fragen"}${roundsLeft > 1 ? `, also etwa ${roundsLeft} Runden` : ""}.`}</p>` : ""}
     ${simRunning() ? `<p class="small">Deine Prüfungssimulation läuft noch. Die Uhr läuft weiter: noch <b>${clockText(S.sim.end - Date.now())}</b> Minuten.</p>` : ""}
     ${streak > 0 ? `<div class="streak"><b>${streak}</b><span>${streak === 1 ? "Tag geübt. Bleib dran!" : "Tage in Folge geübt"}</span></div>` : ""}
     <div style="display:flex;flex-direction:column;gap:6px">
@@ -598,7 +611,7 @@ function renderHeute() {
   <div class="card">
     <h2>Deine Aufgaben für heute</h2>
     ${allDone ? `<p class="done-msg" role="status">Alles für heute geschafft. Gut gemacht!</p>` : ""}
-    <p class="small muted">So viel solltest du täglich schaffen, damit du bis zur Prüfung alle ${Q.length} Fragen sicher kannst. Nutze die letzte Woche zum Wiederholen und für einen ganzen Fall am Stück (ca. 2 Stunden).</p>
+    <p class="small muted">So viel solltest du täglich schaffen, damit du bis zur Prüfung alle ${Q.length} Fragen sicher kannst. Die Fragen übst du über den großen Knopf oben, Runde für Runde.</p>
     <ul class="plan">${tasks.map(t => `
       <li><span class="tick ${t.done ? "done" : ""}"><span aria-hidden="true">${t.done ? "✓" : ""}</span><span class="sr">${t.done ? "erledigt:" : "offen:"}</span></span>
         <div><div>${esc(t.label)}</div><div class="small muted">${esc(t.sub)}</div></div>
@@ -816,10 +829,11 @@ function priority(q, poolSize) {
   if (s && s.last != null && S.n - s.last < gap) p += 2;
   return p + Math.random() * 0.25;
 }
+const ROUND_MAX = 10;   // höchstens so viele Fragen am Stück, damit eine Runde in eine Pause passt
 function roundSize() {
   const perDay = dailyPlan().perDay || 5;
   const rest = perDay - dayLog().q;
-  return Math.min(rest > 0 ? rest : 5, 10);
+  return Math.min(rest > 0 ? rest : 5, ROUND_MAX);
 }
 function hfWeight(rate) { return rate == null ? 2 : rate < .6 ? 3 : rate < .8 ? 2 : 1; } // rot bekommt am meisten
 function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
