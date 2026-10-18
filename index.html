@@ -5,7 +5,21 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Meister-Lern-App</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<meta name="theme-color" content="#1d2a38">
+<meta name="theme-color" content="#f3f4f1" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#141b23" media="(prefers-color-scheme: dark)">
+<script>
+// Hell/Dunkel sofort setzen, bevor etwas gezeichnet wird (sonst blitzt die falsche Farbe kurz auf).
+// Browserleiste: bei „Automatisch“ wählt der Browser selbst die passende der beiden Farben, sonst beide gleich.
+function applyTheme(t) {
+  const r = document.documentElement, fixed = t === "light" || t === "dark";
+  if (fixed) r.dataset.theme = t; else delete r.dataset.theme;
+  document.querySelectorAll('meta[name="theme-color"]').forEach(m => {
+    const dark = fixed ? t === "dark" : /dark/.test(m.media);
+    m.content = dark ? "#141b23" : "#f3f4f1";
+  });
+}
+try { applyTheme((JSON.parse(localStorage.getItem("meister-lern-app-v1")) || {}).theme); } catch (e) { applyTheme(); }
+</script>
 <meta name="robots" content="noindex, nofollow"><!-- Testphase: nicht in Suchmaschinen, bis ein Dozent die Inhalte geprüft hat -->
 <link rel="stylesheet" href="fonts.css">
 <style>
@@ -636,6 +650,14 @@ function renderHeute() {
   </div>` : ""}
 
   <div class="card toolbox">
+    <h3>Darstellung</h3>
+    <p class="small muted">Hell ist draußen in der Sonne besser lesbar, dunkel schont abends die Augen. „Automatisch“ richtet sich nach deinem Handy.</p>
+    <div class="seg" role="group" aria-label="Darstellung">
+      ${[["auto", "Automatisch"], ["light", "Hell"], ["dark", "Dunkel"]].map(([k, t]) => `<button data-theme-pick="${k}" aria-pressed="${(S.theme || "auto") === k}">${t}</button>`).join("")}
+    </div>
+  </div>
+
+  <div class="card toolbox">
     <h3>Lernstand sichern</h3>
     <p class="small muted">Dein Lernstand ist nur in diesem Browser gespeichert. Sichere ihn ab und zu als Datei, z. B. bevor du den Browser-Verlauf löschst oder das Handy wechselst.</p>
     <div class="row">
@@ -658,6 +680,12 @@ function renderHeute() {
     if (what === "sim") { if (!S.sim) simSetup = true; }
     else { filter = teil; round = null; simSetup = false; if (S.sim && S.sim.result) { S.sim = null; save(); } }
     show("fragen", true);
+  }));
+  v.querySelectorAll("[data-theme-pick]").forEach(b => b.addEventListener("click", () => {
+    const t = b.dataset.themePick;
+    if (t === "auto") delete S.theme; else S.theme = t;
+    save(); applyTheme(S.theme);
+    v.querySelectorAll("[data-theme-pick]").forEach(x => x.setAttribute("aria-pressed", x === b));
   }));
   $("#export").addEventListener("click", exportState);
   $("#import").addEventListener("click", () => $("#import-file").click());
@@ -738,7 +766,8 @@ function importState(file) {
     if (!st || typeof st !== "object" || typeof st.stats !== "object" || typeof st.exam !== "string") {
       msg.textContent = "Diese Datei ist kein Lernstand der Meister-Lern-App. Es wurde nichts geändert."; return;
     }
-    S = st;
+    const theme = S.theme; S = st; // Darstellung gehört zum Gerät, nicht zum Lernstand
+    if (theme) S.theme = theme; else delete S.theme;
     if (!Array.isArray(S.simHistory)) S.simHistory = [];
     ["stats", "days", "selfscore", "answers", "seeds", "calc", "cases", "marked", "coach"].forEach(k => { if (!S[k] || typeof S[k] !== "object") S[k] = {}; });
     S.n = S.n || 0;
