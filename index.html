@@ -538,7 +538,7 @@ document.addEventListener("click", e => {
   b.setAttribute("aria-expanded", "true"); b.setAttribute("aria-controls", "gl-box");
   b.closest(".qtext, p").after(box);
 });
-const eur = (n, d = 2) =>n.toLocaleString("de-DE", {minimumFractionDigits: d, maximumFractionDigits: d}) + " €";
+const eur = (n, d = 2) => n.toLocaleString("de-DE", {minimumFractionDigits: d, maximumFractionDigits: d}) + " €";
 const num = (n, d = 0) => n.toLocaleString("de-DE", {minimumFractionDigits: d, maximumFractionDigits: d});
 const r2 = n => Math.round(n * 100) / 100;
 const pick = a => a[Math.floor(Math.random() * a.length)];
