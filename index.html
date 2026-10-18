@@ -1,0 +1,1658 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Meister-Lern-App</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="theme-color" content="#1d2a38">
+<meta name="robots" content="noindex, nofollow"><!-- Testphase: nicht in Suchmaschinen, bis ein Dozent die Inhalte geprüft hat -->
+<link rel="stylesheet" href="fonts.css">
+<style>
+/* Layout: eine Spalte wie ein Werkstattheft, unten feste Reiter, Zollstock-Gelb als einziges Signal */
+:root {
+  --bg: #f3f4f1;
+  --surface: #ffffff;
+  --ink: #1d2a38;
+  --muted: #5b6672;
+  --line: #d9dcd6;        /* nur Trennlinien */
+  --field-border: #8a9088; /* Rahmen von Feldern und Knöpfen, mind. 3:1 Kontrast, auch draußen erkennbar */
+  --accent: #e8b007;      /* Zollstock-Gelb */
+  --accent-ink: #1d2a38;
+  --good: #2f7d4f;
+  --good-bg: #e3f1e8;
+  --bad: #b23a2b;
+  --bad-bg: #f8e4e0;
+  --warn-bg: #fdf3d2;
+  --font-display: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
+  --font-body: "Source Sans 3", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  --r: 10px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #141b23; --surface: #1c2631; --ink: #e9ecef; --muted: #9aa6b2; --line: #2e3a47; --field-border: #6b7888;
+  --accent: #f2c230; --accent-ink: #141b23; --good: #6cc792; --good-bg: #1d3528;
+  --bad: #ef8a7a; --bad-bg: #3d2421; --warn-bg: #3a3218; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #141b23; --surface: #1c2631; --ink: #e9ecef; --muted: #9aa6b2; --line: #2e3a47; --field-border: #6b7888;
+  --accent: #f2c230; --accent-ink: #141b23; --good: #6cc792; --good-bg: #1d3528;
+  --bad: #ef8a7a; --bad-bg: #3d2421; --warn-bg: #3a3218; color-scheme: dark; }
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { background: var(--bg); color: var(--ink); }
+body { margin: 0; font-family: var(--font-body); font-size: 16px; line-height: 1.5; }
+.wrap {
+  max-width: 640px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 12px calc(96px + env(safe-area-inset-bottom, 0px));
+  display: flex; flex-direction: column; gap: 16px;
+}
+header.top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding-top: 8px; }
+.brand { font-family: var(--font-display); font-weight: 700; font-size: 28px; letter-spacing: .01em; line-height: 1; }
+.brand span { background: var(--accent); color: var(--accent-ink); padding: 0 6px; margin-left: 4px; border-radius: 3px; }
+.tag { font-size: 14px; color: var(--muted); }
+.note { background: var(--warn-bg); border-radius: var(--r); padding: 10px 12px; font-size: 14px; }
+h2 { font-family: var(--font-display); font-weight: 600; font-size: 26px; line-height: 1.1; margin: 0; text-wrap: balance; }
+h3 { font-family: var(--font-display); font-weight: 600; font-size: 20px; margin: 0; }
+p { margin: 0; }
+.muted { color: var(--muted); }
+.small { font-size: 14px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+label { font-weight: 600; font-size: 14px; }
+input[type="date"], input[type="text"], textarea, select {
+  font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--field-border); border-radius: 8px; padding: 10px 12px; width: 100%; min-width: 0; min-height: 48px;
+}
+textarea { min-height: 110px; resize: vertical; }
+button { font: inherit; cursor: pointer; }
+.btn { background: var(--ink); color: var(--bg); border: 0; border-radius: 8px; padding: 12px 18px; min-height: 48px; font-weight: 600; }
+.btn.accent { background: var(--accent); color: var(--accent-ink); }
+.btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--field-border); }
+.btn.big { width: 100%; font-size: 19px; min-height: 56px; }
+:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+[tabindex="-1"]:focus { outline: none; }
+.sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.seg { display: flex; gap: 8px; flex-wrap: wrap; }
+.seg button { background: transparent; border: 1px solid var(--field-border); color: var(--ink); border-radius: 999px; padding: 10px 16px; min-height: 44px; font-size: 15px; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+/* Countdown */
+.count { display: flex; align-items: baseline; gap: 10px; }
+.count b { font-family: var(--font-display); font-size: 64px; line-height: .9; font-variant-numeric: tabular-nums; }
+.plan { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.plan li { display: grid; grid-template-columns: 28px 1fr auto; gap: 10px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
+.plan li:first-child { border-top: 0; }
+.tick { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--field-border); display: grid; place-items: center; font-size: 13px; font-weight: 700; }
+.tick.done { background: var(--good); border-color: var(--good); color: var(--surface); }
+.plan .go { background: none; border: 1px solid var(--field-border); border-radius: 8px; color: var(--ink); font-weight: 600; padding: 8px 14px; min-height: 44px; }
+.streak { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+.streak b { font-family: var(--font-display); font-size: 28px; line-height: 1; }
+.done-msg { background: var(--good-bg); border-left: 4px solid var(--good); border-radius: 8px; padding: 10px 12px; font-weight: 600; }
+.more summary { cursor: pointer; font-weight: 600; padding: 10px 0; min-height: 44px; }
+.toolbox { display: flex; flex-direction: column; gap: 8px; }
+.toolbox .row .btn { flex: 1 1 140px; }
+
+/* Schwächenradar: Zollstock-Skala */
+.bars { display: flex; flex-direction: column; gap: 12px; }
+.bar-row { display: flex; flex-direction: column; gap: 4px; }
+.bar-head { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; }
+.bar-head .v { font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.bar { height: 12px; border-radius: 3px; background: repeating-linear-gradient(90deg, var(--line) 0 1px, transparent 1px 10%); border: 1px solid var(--line); overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--accent); }
+.bar i.low { background: var(--bad); }
+.bar i.ok { background: var(--good); }
+
+/* Fragen */
+.qmeta { display: flex; gap: 8px; flex-wrap: wrap; font-size: 14px; color: var(--muted); }
+.pill { border: 1px solid var(--field-border); border-radius: 8px; padding: 1px 8px; }
+.pill.draft { border-color: var(--accent); }
+.qtext { font-size: 20px; font-weight: 600; line-height: 1.35; }
+.opts { display: flex; flex-direction: column; gap: 10px; }
+.opt { text-align: left; background: var(--bg); color: var(--ink); border: 1px solid var(--field-border); border-radius: 8px; padding: 14px; min-height: 56px; display: grid; grid-template-columns: 26px 1fr; gap: 8px; align-items: start; }
+.opt b { font-family: var(--font-mono); }
+.opt.right { background: var(--good-bg); border: 2px solid var(--good); }
+.opt.wrong { background: var(--bad-bg); border: 2px solid var(--bad); }
+.opt em { grid-column: 2; font-style: normal; font-size: 14px; font-weight: 700; }
+.opt.right em { color: var(--good); } .opt.wrong em { color: var(--bad); }
+.opt:disabled { cursor: default; color: var(--ink); }
+.explain { border-left: 3px solid var(--accent); padding: 4px 0 4px 12px; display: flex; flex-direction: column; gap: 4px; }
+.law { font-family: var(--font-mono); font-size: 14px; color: var(--muted); }
+.term { font-size: 15px; color: var(--muted); }
+.verdict { font-weight: 700; }
+.verdict.ok { color: var(--good); } .verdict.no { color: var(--bad); }
+
+/* Rechnen */
+.calc-given { font-family: var(--font-mono); font-size: 14px; background: var(--bg); border-radius: 8px; padding: 12px; display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; font-variant-numeric: tabular-nums; }
+.calc-given span:nth-child(even) { text-align: right; }
+.steps { font-family: var(--font-mono); font-size: 14px; line-height: 1.7; background: var(--bg); border-radius: 8px; padding: 12px; overflow-x: auto; white-space: pre-wrap; }
+.answer { display: flex; gap: 8px; }
+.answer input { flex: 1; }
+.unit { align-self: center; font-family: var(--font-mono); color: var(--muted); }
+
+/* Fälle */
+.case-text { font-size: 15px; display: flex; flex-direction: column; gap: 8px; }
+.tbl { overflow-x: auto; }
+.tbl table { border-collapse: collapse; font-size: 14px; width: 100%; font-variant-numeric: tabular-nums; }
+.tbl td { border-bottom: 1px solid var(--line); padding: 6px 4px; }
+.tbl td:last-child { text-align: right; font-family: var(--font-mono); white-space: nowrap; }
+.task { border-top: 1px solid var(--line); padding-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+.task-h { display: flex; justify-content: space-between; gap: 8px; font-weight: 600; }
+.task-h .pts { font-family: var(--font-mono); font-weight: 400; color: var(--muted); white-space: nowrap; }
+.solution { background: var(--bg); border-radius: 8px; padding: 12px; font-size: 14px; display: flex; flex-direction: column; gap: 6px; }
+.selfscore { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 14px; }
+.selfscore input { width: 80px; }
+.total { font-family: var(--font-display); font-size: 22px; }
+
+/* Reiter unten */
+nav.tabs {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 5;
+  background: var(--surface); border-top: 1px solid var(--line);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: max(8px, env(safe-area-inset-left, 0px)); padding-right: max(8px, env(safe-area-inset-right, 0px));
+}
+nav.tabs .in { max-width: 640px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); }
+nav.tabs button { background: none; border: 0; color: var(--muted); padding: 10px 4px 12px; font-family: var(--font-display); font-weight: 600; font-size: 17px; letter-spacing: .02em; border-top: 3px solid transparent; }
+nav.tabs button[aria-current="page"] { color: var(--ink); border-top-color: var(--accent); }
+.help summary { cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; }
+.help summary::-webkit-details-marker { display: none; }
+.help summary::after { content: "+"; font-family: var(--font-display); font-size: 24px; color: var(--muted); }
+.help[open] summary::after { content: "−"; }
+.howto { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; }
+.status { font-size: 14px; font-weight: 600; white-space: nowrap; flex-shrink: 0; }
+.bar-head b { min-width: 0; hyphens: auto; overflow-wrap: anywhere; }
+.status.low { color: var(--bad); } .status.ok { color: var(--good); }
+.legend { display: inline-flex; align-items: center; gap: 4px; margin-right: 8px; white-space: nowrap; }
+.dot { width: 10px; height: 10px; border-radius: 2px; background: var(--accent); display: inline-block; }
+.dot.low { background: var(--bad); } .dot.ok { background: var(--good); }
+.tip { background: var(--warn-bg); border-radius: 8px; padding: 10px 12px; }
+.mini { font-family: var(--font-mono); font-size: 13px; }
+.numrow { display: flex; flex-direction: column; gap: 4px; padding: 8px; border-radius: 8px; border: 1px solid transparent; }
+.numrow.right { background: var(--good-bg); border-color: var(--good); }
+.numrow.wrong { background: var(--bad-bg); border-color: var(--bad); }
+.ok-t { color: var(--good); } .no-t { color: var(--bad); }
+.checks { border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px 12px; margin: 0; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.checks legend { font-weight: 600; font-size: 14px; padding: 0 4px; }
+.check { display: grid; grid-template-columns: 24px 1fr auto; gap: 8px; align-items: start; font-weight: 400; font-size: 15px; padding: 6px 0; cursor: pointer; }
+.check input { width: 20px; height: 20px; margin: 2px 0 0; accent-color: var(--good); }
+.check .p { font-family: var(--font-mono); font-size: 13px; color: var(--muted); white-space: nowrap; }
+.result { display: flex; flex-direction: column; gap: 4px; padding: 12px; border-radius: 8px; background: var(--bg); border-left: 4px solid var(--accent); }
+.result.full { background: var(--good-bg); border-left-color: var(--good); }
+.check.auto span:first-of-type { font-weight: 600; }
+.found { font-style: normal; font-size: 13px; font-weight: 600; color: var(--good); border: 1px solid var(--good); border-radius: 999px; padding: 0 6px; margin-left: 4px; white-space: nowrap; }
+.sign { flex: 0 0 auto; min-width: 48px; border: 1px solid var(--field-border); background: var(--surface); color: var(--ink); border-radius: 8px; font-family: var(--font-mono); font-size: 18px; }
+details.solution summary { cursor: pointer; }
+.sum { display: flex; flex-direction: column; gap: 4px; border-top: 2px solid var(--ink); padding-top: 12px; }
+.card h3 { margin-top: 4px; }
+.confirm { background: var(--warn-bg); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+@media (prefers-reduced-motion: no-preference) { .bar i { transition: width .4s ease; } }
+
+/* Prüfungssimulation */
+.stack { display: flex; flex-direction: column; gap: 16px; }
+.simbar { position: sticky; top: 0; z-index: 4; background: var(--bg); padding: 10px 0; display: flex; justify-content: space-between; align-items: center; gap: 12px; border-bottom: 1px solid var(--line); }
+.clock { font-family: var(--font-display); font-weight: 700; font-size: 36px; line-height: 1; font-variant-numeric: tabular-nums; }
+.clock.warn { color: var(--bad); }
+.opt.picked { border: 2px solid var(--ink); background: var(--surface); }
+.opt.picked em { color: var(--ink); }
+.choice { display: flex; flex-direction: column; gap: 10px; }
+.choice .btn { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; padding: 14px 18px; min-height: 64px; }
+.choice .btn span { font-weight: 400; font-size: 15px; }
+.verdict-box { border-radius: 8px; padding: 12px; border-left: 4px solid var(--good); background: var(--good-bg); display: flex; flex-direction: column; gap: 4px; }
+.verdict-box.no { border-left-color: var(--bad); background: var(--bad-bg); }
+.verdict-box b { font-family: var(--font-display); font-size: 24px; line-height: 1.1; }
+.wrong-item { border-top: 1px solid var(--line); padding-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+.wrong-item .qtext { font-size: 17px; }
+
+/* Rechenweg als Kalkulationsschema */
+.scheme { width: 100%; border-collapse: collapse; font-size: 15px; font-variant-numeric: tabular-nums; background: var(--bg); border-radius: 8px; }
+.scheme td { padding: 5px 6px; vertical-align: bottom; }
+.scheme td:nth-child(2) { hyphens: auto; overflow-wrap: anywhere; }
+.scheme .op { width: 22px; font-family: var(--font-mono); font-weight: 700; text-align: center; padding-right: 0; }
+.scheme .val { text-align: right; white-space: nowrap; font-family: var(--font-mono); font-size: 14px; }
+.scheme tr.s-sum td:not(.op) { border-top: 1px solid var(--ink); font-weight: 600; }
+.scheme tr.s-ans td:not(.op) { font-weight: 700; }
+.scheme tr.s-ans .val span { border-bottom: 3px double var(--ink); padding-bottom: 1px; }
+.side { font-size: 14px; display: flex; flex-direction: column; gap: 4px; border-left: 3px solid var(--line); padding-left: 10px; }
+.side div { font-family: var(--font-mono); font-size: 13px; overflow-wrap: anywhere; }
+
+/* Bist du bereit? */
+.ready { display: grid; grid-template-columns: 20px 1fr auto; gap: 10px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); }
+.ready:first-of-type { border-top: 0; }
+.ready .go { background: none; border: 1px solid var(--field-border); border-radius: 8px; color: var(--ink); font-weight: 600; padding: 8px 14px; min-height: 44px; }
+.light { width: 18px; height: 18px; border-radius: 50%; background: var(--line); border: 2px solid var(--field-border); }
+.light.low { background: var(--bad); border-color: var(--bad); }
+.light.mid { background: var(--accent); border-color: var(--accent); }
+.light.ok { background: var(--good); border-color: var(--good); }
+
+/* Fachgespräch: Spickzettel */
+.cheat { border: 2px solid var(--ink); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 8px; background: var(--surface); }
+@media print {
+  nav.tabs, header.top, .note, #v-faelle .seg, #v-faelle .card > h2, #v-faelle .card > p, #v-faelle .row, #save-warn { display: none !important; }
+  .card { border: 0; padding: 0; }
+  :root { --bg: #fff !important; --surface: #fff !important; --ink: #000 !important; --muted: #333 !important; }
+}
+
+/* Merken, Vorlesen */
+.qtools { display: flex; gap: 8px; flex-wrap: wrap; }
+.tool { background: transparent; border: 1px solid var(--field-border); color: var(--ink); border-radius: 8px; padding: 8px 12px; min-height: 44px; font-weight: 600; font-size: 15px; }
+.tool[aria-pressed="true"] { background: var(--warn-bg); border-color: var(--accent); }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <h1 class="brand" style="margin:0">Meister<span>III + IV</span></h1>
+    <div class="tag">Prototyp · Rechtsstand 17.10.2026</div>
+  </header>
+  <p class="note">Alle Fragen und Lösungen sind Entwürfe und noch nicht von einem Dozenten geprüft.</p>
+
+  <section id="v-heute" class="view"></section>
+  <section id="v-fragen" class="view" hidden></section>
+  <section id="v-rechnen" class="view" hidden></section>
+  <section id="v-faelle" class="view" hidden></section>
+</div>
+
+<nav class="tabs" aria-label="Bereiche"><div class="in">
+  <button data-v="heute" aria-current="page">Heute</button>
+  <button data-v="fragen">Fragen</button>
+  <button data-v="rechnen">Rechnen</button>
+  <button data-v="faelle">Fälle</button>
+</div></nav>
+
+<script src="fragen.js"></script>
+<script>
+if (typeof Q === "undefined") {
+  document.querySelector(".wrap").innerHTML = '<div class="card"><h2>Fragen fehlen</h2><p>Die Datei <b>fragen.js</b> wurde nicht gefunden. Sie muss im selben Ordner liegen wie diese Seite.</p></div>';
+  throw new Error("fragen.js fehlt");
+}
+/* ---------- Inhalte (Entwurf aus „Probetest Meisterprüfung Teil III und IV“) ---------- */
+const HF = {
+  "III-1": "Wettbewerbsfähigkeit beurteilen",
+  "III-2": "Betrieb gründen oder übernehmen",
+  "III-3": "Betrieb führen",
+  "IV-1": "Ausbildung planen",
+  "IV-2": "Ausbildung vorbereiten und Azubis einstellen",
+  "IV-3": "Ausbildung durchführen",
+  "IV-4": "Ausbildung abschließen",
+  "IV-P": "Präsentation und Fachgespräch"
+};
+/* Die Fragen stehen in fragen.js (Variable Q). */
+
+/* Fallaufgaben (Entwurf). Jeder Fall wird mit make(P) gebaut: P(optionen, standard) liefert beim ersten Mal den
+   Standardwert und nach „Fall neu starten“ einen zufälligen Wert. nums = Ergebnisse, die die App prüft;
+   groups = Antworten zum Abhaken (max = höchstens so viele Punkte). */
+const CASE_DEFS = [
+ {id:"F3", teil:"Teil III", short:"Tischlerei", varies:true, make(P) {
+  const K = P(range(80000, 200000, 10000), 90000);
+  const EK = P(range(20000, 60000, 5000).filter(x => x <= K - 40000), 30000), D = K - EK;
+  const z = P([4, 5, 6, 7], 6), n = P([5, 8, 10], 10);
+  const miete = P(range(12000, 24000, 1200), 18000), vers = P(range(3600, 6000, 600), 4800), fz = P(range(4800, 9600, 1200), 7200);
+  const sonst = P(range(4000, 8000, 400), 6400), ul = P(range(30000, 48000, 2000), 36000), lohn = P(range(64000, 84000, 2000), 76000);
+  const hg = P(range(2600, 3000, 100), 2800), hm = P(range(800, 1200, 100), 1000), g = P([5, 8, 10], 5);
+  const zi = D * z / 100, t = D / n, kd = t + zi, m = r2(kd / 12);
+  const fix = miete + vers + fz + zi + sonst, G = fix + ul + lohn, h = hg + hm;
+  const sk = r2(G / h), gz = r2(sk * g / 100), net = r2(sk + gz), ust = r2(net * .19), br = r2(net + ust);
+  const AB = P(range(3000, 8000, 500), 5000), A = P(range(11000, 15000, 500), 12500);
+  const M1 = P(range(500, 3000, 500), 1500), M2 = P(range(-3000, -500, 500), -1000), E1 = M1 + A - AB, E2 = M2 - M1 + A;
+  const e0 = x => eur(x, 0);
+  return {title:"Gründung, Übernahme und Kalkulation",
+   intro:[`Tischlermeister Max Berger übernimmt zum 1. Januar eine bestehende Tischlerei mit zwei Gesellen. Der Kaufpreis beträgt ${e0(K)}. Er bringt ${e0(EK)} Eigenkapital ein und nimmt ein Darlehen über ${e0(D)} auf. Der Zinssatz beträgt ${z} % pro Jahr, die Tilgung erfolgt linear über ${n} Jahre, die Zinsen werden auf die Anfangsschuld des Jahres berechnet. Berger möchte seine persönliche Haftung begrenzen.`,
+     `Produktive Stunden pro Jahr: insgesamt ${num(h)} (Gesellen zusammen ${num(hg)}, Berger ${num(hm)}). Gewinnzuschlag ${g} %, Umsatzsteuer 19 %.`],
+   table:[["Miete Werkstatt", e0(miete)], ["Versicherungen", e0(vers)], ["Fahrzeugkosten", e0(fz)], ["Zinsen auf das Darlehen", "aus Aufgabe 1"], ["Sonstige Fixkosten", e0(sonst)], ["Kalkulatorischer Unternehmerlohn", e0(ul)], ["Löhne der zwei Gesellen inkl. Lohnnebenkosten", e0(lohn)]],
+   tasks:[
+    {t:"Berechne die Zinsen für das erste Jahr.", p:6, nums:[{l:"Zinsen im 1. Jahr", a:zi, u:"€", p:6}],
+     scheme:[["", `Zinsen im 1. Jahr (${z} %)`, eur(zi), 1]],
+     side:[`Zinsen: ${eur(D)} × ${z} : 100 = ${eur(zi)}`]},
+    {t:"Berechne die jährliche Tilgung, den Kapitaldienst im ersten Jahr und den monatlichen Kapitaldienst.", p:10,
+     nums:[{l:"Tilgung pro Jahr", a:t, u:"€", p:3}, {l:"Kapitaldienst im 1. Jahr", a:kd, u:"€", p:4}, {l:"Kapitaldienst pro Monat", a:m, u:"€", p:3}],
+     scheme:[["", "Tilgung pro Jahr", eur(t), 1], ["+", "Zinsen im 1. Jahr", eur(zi)], ["=", "Kapitaldienst im 1. Jahr", eur(kd), 1], [":", "12 Monate", ""], ["=", "Kapitaldienst pro Monat", eur(m), 1]],
+     side:[`Tilgung: ${eur(D)} : ${n} Jahre = ${eur(t)}`, `Pro Monat: ${eur(kd)} : 12 = ${eur(m)}`]},
+    {t:"Berechne die Gesamtkosten, die Selbstkosten je produktiver Stunde, den Netto-Stundenverrechnungssatz mit Gewinnzuschlag und den Brutto-Stundensatz. Runde auf Cent.", p:14,
+     nums:[{l:"Gesamtkosten pro Jahr", a:G, u:"€", p:4}, {l:"Selbstkosten je Stunde", a:sk, u:"€", p:4}, {l:"Netto-Stundensatz", a:net, u:"€", p:3}, {l:"Brutto-Stundensatz", a:br, u:"€", p:3}],
+     scheme:[["", "Miete Werkstatt", eur(miete)], ["+", "Versicherungen", eur(vers)], ["+", "Fahrzeugkosten", eur(fz)], ["+", "Zinsen", eur(zi)], ["+", "Sonstige Fixkosten", eur(sonst)], ["=", "Fixkosten", eur(fix)],
+       ["+", "Kalkulatorischer Unternehmerlohn", eur(ul)], ["+", "Löhne der Gesellen", eur(lohn)], ["=", "Gesamtkosten pro Jahr", eur(G), 1],
+       ["", "Selbstkosten je Stunde", eur(sk), 1], ["+", `Gewinnzuschlag ${g} %`, eur(gz)], ["=", "Verrechnungssatz netto", eur(net), 1], ["+", "Umsatzsteuer 19 %", eur(ust)], ["=", "Verrechnungssatz brutto", eur(br), 1]],
+     side:[`Selbstkosten je Stunde: ${eur(G)} : ${num(h)} Std. = ${eur(sk)}`, `Gewinnzuschlag: ${eur(sk)} × ${g} : 100 = ${eur(gz)}`, `Umsatzsteuer: ${eur(net)} × 19 : 100 = ${eur(ust)}`]},
+    {t:`Liquiditätsplan: Anfangsbestand Monat 1: ${e0(AB)}; Einzahlungen Monat 1: ${e0(E1)}, Auszahlungen ${e0(A)}; Einzahlungen Monat 2: ${e0(E2)}, Auszahlungen ${e0(A)}. Berechne die Endbestände, beurteile die Lage und nenne zwei Maßnahmen.`, p:10,
+     nums:[{l:"Endbestand Monat 1", a:M1, u:"€", p:2}, {l:"Endbestand Monat 2", a:M2, u:"€", p:2}],
+     scheme:[["", "Anfangsbestand Monat 1", eur(AB)], ["+", "Einzahlungen Monat 1", eur(E1)], ["−", "Auszahlungen Monat 1", eur(A)], ["=", "Endbestand Monat 1", eur(M1), 1],
+       ["+", "Einzahlungen Monat 2", eur(E2)], ["−", "Auszahlungen Monat 2", eur(A)], ["=", "Endbestand Monat 2", eur(M2), 1]],
+     side:["Der Endbestand von Monat 1 ist der Anfangsbestand von Monat 2.", `Ein Minus heißt: Es fehlen ${eur(-M2)}.`],
+     groups:[{g:"Beurteilung", max:2, items:[[`Im 2. Monat fehlen ${e0(-M2)}. Ohne Gegenmaßnahme kann der Betrieb nicht alle Rechnungen zahlen.`, 2]]},
+             {g:"Zwei Maßnahmen (je 2 Punkte)", max:4, items:[["Kontokorrentkredit (Dispo) mit der Bank vereinbaren", 2], ["Abschlagszahlungen mit Kunden vereinbaren", 2], ["Längere Zahlungsziele bei Lieferanten aushandeln", 2], ["Offene Rechnungen konsequent mahnen", 2], ["Anschaffungen verschieben", 2]]}]},
+    {t:"Nenne fünf Schritte oder Anmeldungen, die Berger für die selbstständige Ausübung seines Handwerks erledigen muss.", p:10,
+     groups:[{g:"Fünf Schritte (je 2 Punkte)", max:10, items:[["Eintragung in die Handwerksrolle bei der Handwerkskammer", 2], ["Gewerbeanmeldung beim Gewerbeamt", 2], ["Anmeldung bei der Berufsgenossenschaft", 2], ["Anmeldung beim Finanzamt", 2], ["Eintragung ins Handelsregister (wenn kaufmännischer Betrieb)", 2], ["Anmeldung der Mitarbeiter bei der Sozialversicherung", 2], ["Betriebshaftpflichtversicherung abschließen", 2]]}]},
+    {t:"Berger möchte seine persönliche Haftung beschränken. Nenne zwei Rechtsformen mit gesetzlichem Mindestkapital und drei Nachteile.", p:10,
+     groups:[{g:"Rechtsformen und Kapital", max:7, items:[["GmbH genannt", 2], ["GmbH: mindestens 25.000 € Stammkapital", 2], ["UG (haftungsbeschränkt) genannt", 2], ["UG: Stammkapital ab 1 €", 1]]},
+             {g:"Drei Nachteile (je 1 Punkt)", max:3, items:[["Mehr Aufwand bei Gründung und Verwaltung", 1], ["Pflicht zur Bilanz und Veröffentlichung des Jahresabschlusses", 1], ["Strenge Regeln zum Kapital", 1], ["UG muss Rücklagen bilden", 1], ["Banken verlangen oft trotzdem eine persönliche Bürgschaft", 1]]}]}
+   ]};
+ }},
+ {id:"F5", teil:"Teil III", short:"Elektro", varies:true, make(P) {
+  const F = P(range(40000, 72000, 2000), 54000), p = P([55, 58, 60, 62, 65], 60), kv = P([10, 12, 15, 18], 15), db = p - kv, be = Math.ceil(F / db);
+  const EK = P(range(10000, 40000, 5000), 20000), FK = P(range(30000, 90000, 10000), 60000), BS = EK + FK, q = Math.round(EK / BS * 1000) / 10;
+  const M = P(range(1200, 3600, 200), 2000), mz = P([10, 15, 20], 10), hrs = P(range(10, 24, 2), 16), rate = p;   // derselbe Stundensatz wie in der Einleitung
+  const mat = r2(M * (1 + mz / 100)), lk = hrs * rate, net = r2(mat + lk), ust = r2(net * .19), br = r2(net + ust);
+  const e0 = x => eur(x, 0);
+  return {title:"Gründung eines Elektrobetriebs",
+   intro:[`Elektrotechnikermeisterin Lena Hofmann macht sich als Einzelunternehmerin selbstständig. Sie arbeitet zunächst allein und bietet Elektroinstallationen für Privathaushalte an.`,
+     `Ihre Fixkosten einschließlich kalkulatorischem Unternehmerlohn betragen ${e0(F)} im Jahr. Sie rechnet mit einem Stundensatz von ${e0(p)} netto. Pro Arbeitsstunde fallen ${e0(kv)} variable Kosten an (Kleinmaterial, Fahrzeug).`,
+     `Nach der Gründung hat sie ${e0(EK)} Eigenkapital und ${e0(FK)} Fremdkapital (Bankkredit).`],
+   table:null,
+   tasks:[
+    {t:"Wie viele Stunden muss Frau Hofmann im Jahr abrechnen, damit alle Kosten gedeckt sind? Berechne zuerst den Deckungsbeitrag pro Stunde. Runde auf volle Stunden auf.", p:10,
+     nums:[{l:"Deckungsbeitrag pro Stunde", a:db, u:"€", p:4}, {l:"Stunden pro Jahr (Gewinnschwelle)", a:be, u:"Std.", p:6, tol:.5}],
+     scheme:[["", "Stundensatz netto", eur(p)], ["−", "Variable Kosten je Stunde", eur(kv)], ["=", "Deckungsbeitrag je Stunde", eur(db), 1], ["", "Gewinnschwelle", num(be) + " Std.", 1]],
+     side:["Gewinnschwelle = Fixkosten : Deckungsbeitrag je Stunde", `${eur(F, 0)} : ${eur(db, 0)} = ${num(F / db, 1)} Std., aufgerundet ${num(be)} Std.`]},
+    {t:"Berechne die Bilanzsumme und die Eigenkapitalquote. Runde auf eine Stelle nach dem Komma.", p:6,
+     nums:[{l:"Bilanzsumme", a:BS, u:"€", p:2}, {l:"Eigenkapitalquote", a:q, u:"%", p:4, tol:.051}],
+     scheme:[["", "Eigenkapital", eur(EK)], ["+", "Fremdkapital", eur(FK)], ["=", "Bilanzsumme", eur(BS), 1], ["", "Eigenkapitalquote", num(q, 1) + " %", 1]],
+     side:["Eigenkapitalquote = Eigenkapital × 100 : Bilanzsumme", `${eur(EK, 0)} × 100 : ${eur(BS, 0)} = ${num(q, 1)} %`]},
+    {t:`Ein Kunde möchte ein Angebot für eine neue Elektroverteilung. Material kostet im Einkauf ${e0(M)}, darauf kommen ${mz} % Materialzuschlag. Frau Hofmann rechnet mit ${hrs} Arbeitsstunden zu ${e0(rate)}. Berechne den Nettopreis und den Bruttopreis (19 % Umsatzsteuer).`, p:14,
+     nums:[{l:"Material mit Zuschlag", a:mat, u:"€", p:3}, {l:"Arbeitskosten (Stunden × Stundensatz)", a:lk, u:"€", p:3}, {l:"Angebotspreis netto", a:net, u:"€", p:4}, {l:"Angebotspreis brutto", a:br, u:"€", p:4}],
+     scheme:[["", "Material (Einkauf)", eur(M)], ["+", `Materialzuschlag ${mz} %`, eur(r2(mat - M))], ["=", "Material mit Zuschlag", eur(mat), 1], ["+", "Arbeitskosten", eur(lk), 1], ["=", "Angebotspreis netto", eur(net), 1], ["+", "Umsatzsteuer 19 %", eur(ust)], ["=", "Angebotspreis brutto", eur(br), 1]],
+     side:[`Materialzuschlag: ${eur(M)} × ${mz} : 100 = ${eur(r2(mat - M))}`, `Arbeitskosten: ${hrs} Std. × ${eur(rate)} = ${eur(lk)}`, `Umsatzsteuer: ${eur(net)} × 19 : 100 = ${eur(ust)}`]},
+    {t:"Nenne drei Vorteile und zwei Nachteile der Rechtsform Einzelunternehmen.", p:10,
+     groups:[{g:"Drei Vorteile (je 2 Punkte)", max:6, items:[["Sie entscheidet allein und schnell", 2], ["Einfache und günstige Gründung", 2], ["Kein Mindestkapital nötig", 2], ["Der Gewinn gehört ihr allein", 2]]},
+             {g:"Zwei Nachteile (je 2 Punkte)", max:4, items:[["Sie haftet unbeschränkt, auch mit ihrem Privatvermögen", 2], ["Kredite und Kapital sind schwerer zu bekommen", 2], ["Sie trägt das Risiko allein, z. B. bei Krankheit", 2]]}]},
+    {t:"Nenne fünf Versicherungen, die Frau Hofmann abschließen muss oder sollte.", p:10,
+     groups:[{g:"Fünf Versicherungen (je 2 Punkte)", max:10, items:[["Betriebshaftpflichtversicherung", 2], ["Gesetzliche Unfallversicherung bei der Berufsgenossenschaft", 2], ["Krankenversicherung", 2], ["Rentenversicherung (Pflicht für Handwerker in der Handwerksrolle)", 2], ["Inhalts- oder Werkzeugversicherung (Diebstahl, Feuer)", 2], ["Betriebsunterbrechungsversicherung", 2], ["Rechtsschutzversicherung", 2]]}]},
+    {t:"Nenne fünf Maßnahmen, mit denen Frau Hofmann Kunden gewinnen kann.", p:10,
+     groups:[{g:"Fünf Maßnahmen (je 2 Punkte)", max:10, items:[["Google-Unternehmensprofil anlegen", 2], ["Eigene Webseite", 2], ["Firmenfahrzeug beschriften", 2], ["Empfehlungen und Bewertungen zufriedener Kunden", 2], ["Social Media, z. B. Instagram oder Facebook", 2], ["Zusammenarbeit mit anderen Handwerkern oder Bauträgern", 2], ["Anzeigen, Flyer oder Lokalzeitung", 2]]}]}
+   ]};
+ }},
+ {id:"F4", teil:"Teil IV", short:"Malerbetrieb", make() { return {title:"Ausbildung im eigenen Betrieb",
+  intro:["Malermeisterin Sandra Weiß führt einen Malerbetrieb mit vier Beschäftigten und will zum ersten Mal ausbilden. Sie hat sich für den Bewerber Jonas Keller (16 Jahre) entschieden. In der dritten und vierten Woche der Probezeit kommt Jonas an fünf von zehn Arbeitstagen mehr als 20 Minuten zu spät."],
+  table:null,
+  tasks:[
+   {t:"Nenne vier Voraussetzungen, die Frau Weiß und ihr Betrieb für die Ausbildung erfüllen müssen, und erkläre kurz, was die fachliche Eignung umfasst.",p:10,
+    groups:[{g:"Vier Voraussetzungen (je 2 Punkte)",max:8,items:[["Persönliche Eignung (BBiG § 29)",2],["Fachliche Eignung (BBiG § 30)",2],["Geeignete Ausbildungsstätte: passende Werkstatt und Einrichtung (BBiG § 27)",2],["Passendes Verhältnis von Azubis zu Fachkräften (BBiG § 27)",2]]},
+            {g:"Fachliche Eignung erklärt",max:2,items:[["Berufliche sowie berufs- und arbeitspädagogische Kenntnisse, z. B. durch Teil IV der Meisterprüfung",2]]}]},
+   {t:"Nenne drei Instrumente der Bewerberauswahl und zwei Punkte, die nach dem AGG zu beachten sind.",p:10,
+    groups:[{g:"Drei Auswahl-Instrumente (je 2 Punkte)",max:6,items:[["Bewerbungsunterlagen auswerten",2],["Vorstellungsgespräch",2],["Probearbeiten oder Praktikum",2],["Eignungstest",2],["Referenzen einholen",2]]},
+            {g:"Zwei Punkte zum AGG (je 2 Punkte)",max:4,items:[["Niemanden benachteiligen wegen Herkunft, Geschlecht, Religion, Behinderung, Alter oder sexueller Identität",2],["Keine Fragen nach Familienplanung oder Schwangerschaft",2],["Gründe für die Auswahl schriftlich festhalten",2]]}]},
+   {t:"Nenne fünf Mindestinhalte, die der Ausbildungsvertrag enthalten muss.",p:10,
+    groups:[{g:"Fünf Inhalte (je 2 Punkte, BBiG § 11)",max:10,items:[["Art und Gliederung der Ausbildung",2],["Beginn und Dauer der Ausbildung",2],["Ausbildungsstätte",2],["Tägliche Ausbildungszeit",2],["Dauer der Probezeit",2],["Höhe der Vergütung",2],["Dauer des Urlaubs",2],["Wann gekündigt werden kann",2],["Hinweis auf Tarifverträge",2]]}]},
+   {t:"Unterweisung „Spachtelmasse auf Gipskartonplatten auftragen und glätten“: Formuliere ein überprüfbares Lernziel und beschreibe die vier Stufen.",p:20,
+    groups:[{g:"Lernziel",max:4,items:[["Lernziel sagt, was der Azubi danach kann und woran man es prüft, z. B.: 1 m² so verspachteln, dass nach dem Schleifen keine Absätze sichtbar sind",4]]},
+            {g:"Die vier Stufen (je 4 Punkte)",max:16,items:[["1. Vorbereiten: Material bereitstellen, Ziel nennen, Vorwissen fragen, Sicherheit erklären",4],["2. Vormachen und erklären: Schritt für Schritt zeigen, wichtige Stellen betonen",4],["3. Nachmachen und erklären lassen: Azubi macht es selbst, Ausbilderin korrigiert und lobt",4],["4. Selbstständig üben lassen: allein üben, Ergebnis kontrollieren, Rückmeldung geben",4]]}]},
+   {t:"Wie sollte Frau Weiß reagieren? Könnte sie in der Probezeit kündigen, und wenn ja, wie?",p:10,
+    groups:[{g:"Reaktion (je 1 Punkt)",max:6,items:[["Zeitnah ein Gespräch unter vier Augen führen",1],["Ursachen klären (Fahrtweg, Familie, Einstellung)",1],["Klare Regeln zur Pünktlichkeit festlegen",1],["Gespräch und Verspätungen schriftlich festhalten",1],["Eltern einbeziehen, weil Jonas minderjährig ist",1],["Bei weiteren Verstößen abmahnen",1]]},
+            {g:"Kündigung in der Probezeit",max:4,items:[["Jederzeit möglich, ohne Frist und ohne Begründung",2],["Muss schriftlich sein und an die Eltern gehen",2]]}]},
+   {t:"Nenne zwei Beurteilungsfehler und je eine Maßnahme, um sie zu vermeiden.",p:10,
+    groups:[{g:"Zwei Beurteilungsfehler (je 2 Punkte)",max:4,items:[["Halo-Effekt: ein Merkmal überstrahlt alles andere",2],["Tendenz zur Mitte: alle bekommen mittlere Noten",2],["Milde- oder Strengefehler",2],["Reihenfolgeeffekt: die letzten Eindrücke zählen zu stark",2]]},
+            {g:"Je eine Maßnahme (je 3 Punkte)",max:6,items:[["Jedes Merkmal einzeln mit einem Beurteilungsbogen bewerten",3],["Die ganze Notenskala nutzen und mit Beobachtungen begründen",3],["Maßstab vorher festlegen und mit Kollegen abgleichen",3],["Beobachtungen laufend über die ganze Zeit notieren",3]]}]}
+  ]}; }},
+ {id:"F6", teil:"Teil IV", short:"Kfz-Werkstatt", make() { return {title:"Probleme mit einem Auszubildenden",
+  intro:["Kfz-Mechatronikermeister Tobias Krämer bildet in seiner Werkstatt mit sechs Beschäftigten aus. Sein Auszubildender Leon Wagner ist im zweiten Ausbildungsjahr. Leon ist jetzt 17 Jahre alt und war es auch schon zu Beginn des Kalenderjahres.",
+   "In den letzten Wochen hat Leon zweimal unentschuldigt in der Berufsschule gefehlt. Seinen Ausbildungsnachweis (Berichtsheft) hat er seit einem Monat nicht mehr geführt, und seine Noten werden schlechter."],
+  table:null,
+  tasks:[
+   {t:"Nenne fünf Pflichten, die Leon als Auszubildender hat.",p:10,
+    groups:[{g:"Fünf Pflichten (je 2 Punkte, BBiG § 13)",max:10,items:[["Aufgaben sorgfältig ausführen",2],["Am Berufsschulunterricht und an Prüfungen teilnehmen",2],["Weisungen des Ausbilders befolgen",2],["Die Betriebsordnung beachten",2],["Werkzeug und Maschinen pfleglich behandeln",2],["Über Betriebsgeheimnisse schweigen",2],["Den Ausbildungsnachweis (Berichtsheft) führen",2]]}]},
+   {t:"Nenne fünf Pflichten, die Herr Krämer als Ausbildender hat.",p:10,
+    groups:[{g:"Fünf Pflichten (je 2 Punkte, BBiG §§ 14–17)",max:10,items:[["Die nötigen Kenntnisse und Fertigkeiten vermitteln",2],["Ausbildungsmittel und Werkzeug kostenlos stellen",2],["Für die Berufsschule freistellen und zum Besuch anhalten",2],["Zum Führen des Berichtshefts anhalten und es regelmäßig durchsehen",2],["Den Azubi charakterlich fördern",2],["Nur Aufgaben geben, die dem Ausbildungszweck dienen",2],["Eine angemessene Vergütung zahlen",2],["Am Ende ein Zeugnis ausstellen",2]]}]},
+   {t:"Wie viele Stunden darf Leon nach dem Jugendarbeitsschutzgesetz in der Regel höchstens täglich und wöchentlich arbeiten, und an wie vielen Tagen pro Woche?",p:6,
+    nums:[{l:"Stunden pro Tag",a:8,u:"Std.",p:2},{l:"Stunden pro Woche",a:40,u:"Std.",p:2},{l:"Arbeitstage pro Woche",a:5,u:"Tage",p:2}],
+    way:["JArbSchG § 8: höchstens 8 Stunden täglich und 40 Stunden wöchentlich. An einzelnen Tagen sind 8,5 Stunden erlaubt, wenn andere Tage dafür kürzer sind.","JArbSchG § 15: Jugendliche dürfen nur an 5 Tagen pro Woche beschäftigt werden."]},
+   {t:"Wie viele Werktage Urlaub stehen Leon in diesem Jahr mindestens zu?",p:4,
+    nums:[{l:"Urlaub",a:25,u:"Werktage",p:4}],
+    way:["JArbSchG § 19: Wer zu Beginn des Kalenderjahres noch nicht 18 Jahre alt ist, bekommt mindestens 25 Werktage (unter 17: 27, unter 16: 30)."]},
+   {t:"Herr Krämer will mit Leon ein Gespräch über Fehlzeiten, Berichtsheft und Noten führen. Beschreibe, wie er das Gespräch vorbereitet und führt.",p:20,
+    groups:[{g:"Ablauf des Gesprächs (je 2 Punkte)",max:20,items:[["Vorbereiten: Termin festlegen, Fakten und Daten sammeln",2],["Ruhiger Ort, unter vier Augen, ohne Störungen",2],["Freundlicher Einstieg, auch Positives ansprechen",2],["Anlass konkret und sachlich mit Beispielen nennen",2],["In Ich-Botschaften sprechen statt Vorwürfe machen",2],["Leon seine Sicht schildern lassen und zuhören",2],["Gemeinsam nach Ursachen suchen",2],["Ziele und Maßnahmen gemeinsam vereinbaren",2],["Ergebnis schriftlich festhalten",2],["Folgetermin vereinbaren, um die Fortschritte zu überprüfen",2]]}]},
+   {t:"Leon fehlt erneut unentschuldigt in der Berufsschule. Welche arbeitsrechtliche Maßnahme ist jetzt möglich, und was muss sie enthalten?",p:10,
+    groups:[{g:"Maßnahme und Inhalt (je 2 Punkte)",max:10,items:[["Eine Abmahnung",2],["Genaue Beschreibung des Fehlverhaltens mit Datum",2],["Aufforderung, das Verhalten künftig zu ändern",2],["Hinweis, dass im Wiederholungsfall die Kündigung droht",2],["Schriftlich, und weil Leon minderjährig ist, auch an die Eltern",2]]}]},
+   {t:"Wie kann der Betrieb Leon helfen, seine Leistungen zu verbessern? Nenne fünf Maßnahmen.",p:10,
+    groups:[{g:"Fünf Maßnahmen (je 2 Punkte)",max:10,items:[["Feste Lernzeit im Betrieb einplanen",2],["Förderung wie die Assistierte Ausbildung der Arbeitsagentur oder Nachhilfe",2],["Kontakt mit den Lehrern der Berufsschule aufnehmen",2],["Gemeinsam einen Lernplan erstellen",2],["Mit alten Prüfungsaufgaben üben",2],["Lerngruppe oder einen Gesellen als Paten einsetzen",2],["Das Berichtsheft jede Woche gemeinsam durchgehen",2]]}]}
+  ]}; }}
+];
+function mulberry(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function buildCases() {
+  return CASE_DEFS.map(d => {
+    const seed = (S.seeds || {})[d.id] || 0, rng = seed ? mulberry(seed) : null;
+    const P = (opts, def) => rng && opts.length ? opts[Math.floor(rng() * opts.length)] : def;
+    return Object.assign({id: d.id, teil: d.teil, short: d.short, varies: !!d.varies}, d.make(P));
+  });
+}
+
+/* ---------- Speicher (nur in diesem Browser) ---------- */
+const KEY = "meister-lern-app-v1";
+function load() { try { return JSON.parse(localStorage.getItem(KEY)) || null; } catch (e) { return null; } }
+let saveFailed = false;
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(S)); saveFailed = false; }
+  catch (e) { saveFailed = true; }
+  showSaveWarning();
+}
+function showSaveWarning() {
+  let w = document.getElementById("save-warn");
+  if (!saveFailed) { if (w) w.remove(); return; }
+  if (w) return;
+  w = document.createElement("p"); w.id = "save-warn"; w.className = "note"; w.setAttribute("role", "alert");
+  w.innerHTML = "<b>Achtung: Dein Lernstand kann gerade nicht gespeichert werden.</b> Das passiert z. B. im privaten Modus des Browsers. Sichere ihn unten auf „Heute“ mit „Lernstand sichern“.";
+  document.querySelector(".wrap .note").after(w);
+}
+// Browser bitten, die gespeicherten Daten nicht von selbst zu löschen
+try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {}); } catch (e) {}
+// Datum nach Ortszeit (toISOString rechnet in UTC, dann wäre in Deutschland bis 1 bzw. 2 Uhr nachts noch „gestern“)
+function isoDate(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+const today = () => isoDate(new Date());
+let S = load() || {};
+if (!S.exam) { const d = new Date(); d.setDate(d.getDate() + 90); S.exam = isoDate(d); S.examIsExample = true; }
+S.stats = S.stats || {};      // id -> {seen, right, streak}
+S.days = S.days || {};        // datum -> {q, calc, fall}
+S.selfscore = S.selfscore || {};
+S.answers = S.answers || {};
+// laufende Prüfungssimulation verwerfen, wenn eine ihrer Fragen nicht mehr im Katalog steht
+if (S.sim && !(Array.isArray(S.sim.ids) && S.sim.ids.every(id => Q.some(q => q.id === id)))) S.sim = null;
+function dayLog() { const t = today(); S.days[t] = S.days[t] || {q:0, calc:0, fall:0}; const d = S.days[t]; d.qr = d.qr || 0; d.cr = d.cr || 0; d.sim = d.sim || 0; return d; }
+
+/* ---------- Als App auf den Startbildschirm (mit Offline-Modus) ---------- */
+// Nur auf einer eigenen Adresse. Auf der Handy-Testseite (claude.ai, in einem Rahmen) geht das nicht, dort bleibt alles aus.
+const OWN_SITE = (() => { try { return /^https?:$/.test(location.protocol) && window.top === window.self && !/(^|\.)(claude|claudeusercontent)\.[a-z]+$/.test(location.hostname); } catch (e) { return false; } })();
+const isInstalled = () => { try { return matchMedia("(display-mode: standalone)").matches || navigator.standalone === true; } catch (e) { return false; } };
+const isIOS = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+let installPrompt = null;   // Android/Chrome: Knopf „Jetzt hinzufügen“ statt Anleitung
+if (OWN_SITE) {
+  for (const [rel, href] of [["manifest", "manifest.webmanifest"], ["icon", "icon.svg"], ["apple-touch-icon", "icon-192.png"]]) {
+    const l = document.createElement("link"); l.rel = rel; l.href = href; document.head.appendChild(l);
+  }
+  const reHeute = () => { const v = document.getElementById("v-heute"); if (v && !v.hidden) renderHeute(); };
+  window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); installPrompt = e; reHeute(); });
+  window.addEventListener("appinstalled", () => { installPrompt = null; S.installHint = "hidden"; save(); reHeute(); });
+}
+const showInstallHint = () => OWN_SITE && !isInstalled() && S.installHint !== "hidden";
+
+/* ---------- Hilfen ---------- */
+const $ = (s, el = document) => el.querySelector(s);
+// Leerzeichen vor % und € wird geschützt, damit Zahl und Einheit nicht getrennt umbrechen
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])).replace(/ (?=[%€])/g, " ");
+const eur = (n, d = 2) => n.toLocaleString("de-DE", {minimumFractionDigits: d, maximumFractionDigits: d}) + " €";
+const num = (n, d = 0) => n.toLocaleString("de-DE", {minimumFractionDigits: d, maximumFractionDigits: d});
+const r2 = n => Math.round(n * 100) / 100;
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const range = (from, to, step) => { const out = []; for (let x = from; x <= to; x += step) out.push(x); return out; };
+function parseNum(s) {
+  s = String(s).trim().replace(/[€%\s]/g, "").replace("−", "-");
+  if (!s) return NaN;
+  if (s.includes(",")) s = s.replace(/\./g, "").replace(",", ".");
+  else if (/^-?\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, "");
+  return Number(s);
+}
+const REPS = 3; // so oft hintereinander richtig, bis eine Frage als sicher gilt
+
+S.seeds = S.seeds || {};
+let CASES = buildCases();
+
+/* ---------- Ansicht: Heute ---------- */
+function daysLeft() {
+  const a = new Date(today() + "T00:00:00"), b = new Date(S.exam + "T00:00:00");
+  return Math.round((b - a) / 86400000);
+}
+function hfStats() {
+  return Object.keys(HF).map(k => {
+    const qs = Q.filter(q => q.hf === k);
+    let seen = 0, right = 0, sure = 0;
+    qs.forEach(q => { const s = S.stats[q.id]; if (s) { seen += s.seen; right += s.right; if (s.streak >= REPS) sure++; } });
+    return {k, name: HF[k], total: qs.length, seen, right, sure, rate: seen ? right / seen : null};
+  });
+}
+function level(rate) {   // Klartext-Einstufung für Laien
+  if (rate == null) return {cls: "", word: "Noch offen"};
+  if (rate < .6) return {cls: "low", word: "Schwach"};
+  if (rate < .8) return {cls: "", word: "Mittel"};
+  return {cls: "ok", word: "Gut"};
+}
+const MAX_PER_DAY = 30;   // mehr Fragen am Tag schafft kaum jemand neben der Arbeit
+function dailyPlan() {
+  const left = daysLeft();
+  const needed = Q.reduce((n, q) => n + Math.max(0, REPS - ((S.stats[q.id] || {}).streak || 0)), 0);
+  const raw = left > 0 ? Math.max(5, Math.ceil(needed / Math.max(1, left - 7))) : 0;
+  return {left, needed, perDay: Math.min(raw, MAX_PER_DAY), capped: raw > MAX_PER_DAY};
+}
+function practised(d) { return d && (d.q > 0 || d.calc > 0 || d.fall > 0); }
+function learnStreak() {   // Tage in Folge mit Übung; heute zählt mit, sobald etwas gemacht wurde
+  const d = new Date();
+  if (!practised(S.days[isoDate(d)])) d.setDate(d.getDate() - 1);
+  let n = 0;
+  while (practised(S.days[isoDate(d)])) { n++; d.setDate(d.getDate() - 1); }
+  return n;
+}
+function hfBar(s) {
+  const pct = s.rate == null ? 0 : Math.round(s.rate * 100), lv = level(s.rate);
+  const [teil, nr] = s.k.split("-");
+  return `<div class="bar-row">
+    <div class="small muted">Teil ${teil} · ${nr === "P" ? "Praktischer Teil" : "Handlungsfeld " + nr}</div>
+    <div class="bar-head"><b>${esc(s.name)}</b><span class="status ${lv.cls}">${lv.word}${s.rate == null ? "" : " · " + pct + " %"}</span></div>
+    <div class="bar" role="img" aria-label="${esc(s.name)}: ${s.seen ? s.right + " von " + s.seen + " richtig" : "noch keine Antworten"}"><i class="${lv.cls}" style="width:${pct}%"></i></div>
+    <div class="small muted">${s.seen ? `${s.right} von ${s.seen} Antworten richtig` : "Noch keine Frage beantwortet"}</div>
+  </div>`;
+}
+function renderHeute() {
+  const {left, perDay, capped} = dailyPlan();
+  const log = dayLog();
+  const sunday = new Date().getDay() === 0;
+  const finalWeek = left <= 7 && left > 0;
+  const stats = hfStats();
+  const sure = stats.reduce((n, s) => n + s.sure, 0);
+  const anyAnswer = stats.some(s => s.seen > 0);
+  const sug = suggestCalc();
+  const streak = learnStreak();
+  // die drei Bereiche, um die man sich zuerst kümmern sollte: schwach, dann offen, dann mittel
+  const rank = s => s.rate == null ? 1 : s.rate < .6 ? s.rate - 1 : 1 + s.rate;
+  const focus = stats.slice().sort((a, b) => rank(a) - rank(b)).slice(0, 3);
+  const others = stats.filter(s => !focus.includes(s));
+
+  const tasks = [
+    left > 0
+      ? {done: log.q >= perDay, label: `${perDay} Fragen beantworten`, sub: (log.q ? `Heute ${log.q} beantwortet, davon ${log.qr} richtig` : "Heute noch keine beantwortet") + (capped ? ` · Mehr als ${MAX_PER_DAY} am Tag sind zu viel. Übe lieber jeden Tag ein bisschen.` : ""), go: "fragen"}
+      : {done: false, label: "Prüfung vorbei? Trag deinen neuen Termin ein.", sub: log.q ? `Heute ${log.q} Fragen beantwortet, davon ${log.qr} richtig` : "Du kannst trotzdem weiter üben.", go: "exam"},
+    {done: log.calc >= 3, label: "3 Rechenaufgaben lösen", sub: (log.calc ? `Heute ${log.calc} gerechnet, davon ${log.cr} richtig` : "Heute noch nichts gerechnet") + ` · Tipp: ${GEN[sug.type].name}`, go: "rechnen"},
+  ];
+  if (finalWeek) tasks.push({done: log.sim >= 1, label: `Prüfung simulieren (${SIM_N} Fragen, ${SIM_N * SIM_MIN_PER_Q} Minuten)`, sub: log.sim ? "Heute schon gemacht" : "Wie in der echten Prüfung: mit Uhr, Lösungen erst am Ende", go: "sim"});
+  tasks.push({done: log.fall >= 1, label: finalWeek ?"Einen ganzen Fall am Stück lösen (ca. 2 Stunden)" : sunday ? "Sonntag: eine Fallaufgabe bearbeiten" : "Fallaufgabe (freiwillig, ideal am Sonntag)", sub: log.fall ? "Heute geprüft · Punkte siehst du unten" : "Heute noch nicht bearbeitet", go: "faelle"});
+  const allDone = left > 0 && tasks.every(t => t.done);
+  const n = roundSize();
+
+  const v = $("#v-heute");
+  v.innerHTML = `
+  <h2 class="sr view-h" tabindex="-1">Heute</h2>
+  <details class="card help" ${anyAnswer ? "" : "open"}>
+    <summary><h3>So funktioniert die App</h3></summary>
+    <ol class="howto">
+      <li><b>Prüfungstermin eintragen.</b> Die App rechnet aus, wie viel du jeden Tag üben musst.</li>
+      <li><b>Jeden Tag die Aufgaben unten erledigen.</b> Ein Häkchen zeigt, was geschafft ist.</li>
+      <li><b>Die Balken zeigen deine Stärken und Schwächen.</b> Wo es rot ist, bekommst du automatisch mehr Fragen.</li>
+    </ol>
+  </details>
+
+  <div class="card">
+    <div class="count"><b>${left > 0 ? left : 0}</b><span>${left === 1 ? "Tag" : "Tage"} bis zur Prüfung</span></div>
+    <button class="btn big accent" id="go-big">${simRunning() ? "Prüfungssimulation fortsetzen" : allDone ? "Noch eine Runde üben" : `Jetzt ${n} Fragen üben`}</button>
+    ${simRunning() ? `<p class="small">Deine Prüfungssimulation läuft noch. Die Uhr läuft weiter: noch <b>${clockText(S.sim.end - Date.now())}</b> Minuten.</p>` : ""}
+    ${streak > 0 ? `<div class="streak"><b>${streak}</b><span>${streak === 1 ? "Tag geübt. Bleib dran!" : "Tage in Folge geübt"}</span></div>` : ""}
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <label for="exam">Wann ist deine Prüfung?</label>
+      <input type="date" id="exam" value="${S.exam}">
+      ${S.examIsExample ? '<p class="small muted">Das ist ein Beispieldatum. Tippe auf das Feld und trag deinen echten Termin ein.</p>' : ""}
+    </div>
+  </div>
+
+  ${anyAnswer ? readyCard() : ""}
+
+  <div class="card">
+    <h2>Deine Aufgaben für heute</h2>
+    ${allDone ? `<p class="done-msg" role="status">Alles für heute geschafft. Gut gemacht!</p>` : ""}
+    <p class="small muted">So viel solltest du täglich schaffen, damit du bis zur Prüfung alle ${Q.length} Fragen sicher kannst. Nutze die letzte Woche zum Wiederholen und für einen ganzen Fall am Stück (ca. 2 Stunden).</p>
+    <ul class="plan">${tasks.map(t => `
+      <li><span class="tick ${t.done ? "done" : ""}"><span aria-hidden="true">${t.done ? "✓" : ""}</span><span class="sr">${t.done ? "erledigt:" : "offen:"}</span></span>
+        <div><div>${esc(t.label)}</div><div class="small muted">${esc(t.sub)}</div></div>
+        <button class="go" data-go="${t.go}">${t.go === "exam" ? "Termin ändern" : t.done ? "Mehr üben" : "Starten"}</button></li>`).join("")}
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>Deine Stärken und Schwächen</h2>
+    <h3>Hier solltest du zuerst üben</h3>
+    <p class="small muted">Für jeden Prüfungsbereich siehst du, wie viele deiner Antworten richtig waren.
+      <span class="legend"><i class="dot low"></i>Schwach</span> <span class="legend"><i class="dot"></i>Mittel</span> <span class="legend"><i class="dot ok"></i>Gut</span></p>
+    <div class="bars">${focus.map(hfBar).join("")}</div>
+    <p class="small muted"><b>${sure} von ${Q.length} Fragen sitzen.</b> Eine Frage sitzt, wenn du sie ${REPS}-mal hintereinander richtig beantwortet hast.</p>
+    <details class="more"><summary>Alle Bereiche anzeigen</summary>
+    <div class="bars">${others.map(hfBar).join("")}</div>
+    <h3 style="margin-top:16px">Rechnen</h3>
+    <div class="bars">${Object.entries(GEN).map(([k, g]) => {
+      const c = S.calc[k], rate = c && c.seen ? c.right / c.seen : null, pct = rate == null ? 0 : Math.round(rate * 100), lv = level(rate);
+      return `<div class="bar-row">
+        <div class="bar-head"><b>${esc(g.name)}</b><span class="status ${lv.cls}">${lv.word}${rate == null ? "" : " · " + pct + " %"}</span></div>
+        <div class="bar" role="img" aria-label="${esc(g.name)}: ${c && c.seen ? c.right + " von " + c.seen + " richtig" : "noch nicht geübt"}"><i class="${lv.cls}" style="width:${pct}%"></i></div>
+        <div class="small muted">${c && c.seen ? `${c.right} von ${c.seen} Aufgaben richtig` : "Noch nicht geübt"}</div>
+      </div>`; }).join("")}
+    </div>
+    <h3>Fallaufgaben</h3>
+    <div class="bars">${CASES.map(c => {
+      const sc = caseScore(c), rate = sc.max ? sc.got / sc.max : null, pct = rate == null ? 0 : Math.round(rate * 100), lv = level(rate);
+      return `<div class="bar-row">
+        <div class="small muted">${c.teil}</div>
+        <div class="bar-head"><b>${esc(c.title)}</b><span class="status ${lv.cls}">${lv.word}${rate == null ? "" : " · " + pct + " %"}</span></div>
+        <div class="bar" role="img" aria-label="${esc(c.title)}: ${sc.max ? sc.got + " von " + sc.max + " Punkten" : "noch nicht bearbeitet"}"><i class="${lv.cls}" style="width:${pct}%"></i></div>
+        <div class="small muted">${sc.done ? `${sc.got} von ${sc.max} Punkten · ${sc.done} von ${sc.total} Aufgaben geprüft` : "Noch nicht bearbeitet"}</div>
+      </div>`; }).join("")}
+    </div>
+    </details>
+  </div>
+
+  ${showInstallHint() ? `<div class="card toolbox">
+    <h3>App auf den Startbildschirm legen</h3>
+    <p class="small muted">Dann öffnest du sie mit einem Tipp wie jede andere App. Sie läuft dann auch ohne Internet, z. B. auf der Baustelle.</p>
+    ${installPrompt ? "" : `<p class="small">${isIOS()
+      ? "Öffne die App in <b>Safari</b>. Tippe unten auf <b>Teilen</b> (Viereck mit Pfeil nach oben) und dann auf <b>„Zum Home-Bildschirm“</b>."
+      : "Tippe im Browser oben rechts auf <b>⋮</b> (drei Punkte) und dann auf <b>„Zum Startbildschirm hinzufügen“</b> oder <b>„App installieren“</b>."}</p>`}
+    <div class="row">
+      ${installPrompt ? `<button class="btn accent" id="install-go">Jetzt hinzufügen</button>` : ""}
+      <button class="btn ghost" id="install-hide">Hinweis ausblenden</button>
+    </div>
+  </div>` : ""}
+
+  <div class="card toolbox">
+    <h3>Lernstand sichern</h3>
+    <p class="small muted">Dein Lernstand ist nur in diesem Browser gespeichert. Sichere ihn ab und zu als Datei, z. B. bevor du den Browser-Verlauf löschst oder das Handy wechselst.</p>
+    <div class="row">
+      <button class="btn ghost" id="export">Lernstand sichern</button>
+      <button class="btn ghost" id="import">Lernstand laden</button>
+      <input type="file" id="import-file" accept=".json,application/json" hidden>
+    </div>
+    <p class="small" id="io-msg" role="status"></p>
+  </div>`;
+  $("#exam").addEventListener("change", e => { if (e.target.value) { S.exam = e.target.value; S.examIsExample = false; save(); renderHeute(); } });
+  $("#go-big").addEventListener("click", () => { round = null; simSetup = false; if (S.sim && S.sim.result) { S.sim = null; save(); } show("fragen"); });
+  if ($("#install-hide")) $("#install-hide").addEventListener("click", () => { S.installHint = "hidden"; save(); renderHeute(); });
+  if ($("#install-go")) $("#install-go").addEventListener("click", async () => {
+    const p = installPrompt; installPrompt = null;
+    try { await p.prompt(); const r = await p.userChoice; if (r && r.outcome === "accepted") { S.installHint = "hidden"; save(); } } catch (e) {}
+    renderHeute();
+  });
+  v.querySelectorAll("[data-ready]").forEach(b => b.addEventListener("click", () => {
+    const [what, teil] = b.dataset.ready.split(":");
+    if (what === "sim") { if (!S.sim) simSetup = true; }
+    else { filter = teil; round = null; simSetup = false; if (S.sim && S.sim.result) { S.sim = null; save(); } }
+    show("fragen", true);
+  }));
+  $("#export").addEventListener("click", exportState);
+  $("#import").addEventListener("click", () => $("#import-file").click());
+  $("#import-file").addEventListener("change", e => { const f = e.target.files[0]; if (f) importState(f); e.target.value = ""; });
+  v.querySelectorAll("[data-go]").forEach(b => b.addEventListener("click", () => {
+    if (b.dataset.go === "exam") { const e = $("#exam"); e.focus(); try { e.showPicker(); } catch (x) {} return; }
+    if (b.dataset.go === "fragen") { round = null; simSetup = false; if (S.sim && S.sim.result) { S.sim = null; save(); } }
+    if (b.dataset.go === "sim") { if (!S.sim) simSetup = true; show("fragen"); return; }
+    if (b.dataset.go === "rechnen") { calcType = suggestCalc().type; calc = GEN[calcType].make(); calcResult = null; }
+    show(b.dataset.go);
+  }));
+}
+
+/* ---------- „Bist du bereit?“: Ampel je Prüfungsteil ----------
+   Fasst zusammen, was schon da ist: wie viele Fragen gesehen, Trefferquote je Handlungsfeld, letzte Simulation.
+   Grenzen (Entwurf): grün ab 80 % richtig, 80 % der Fragen gesehen und letzte Simulation bestanden; rot bei einem Feld unter 60 %. */
+function readiness(teil) {
+  const hfs = SIM_HF[teil], st = hfStats().filter(s => hfs.includes(s.k));
+  const qs = Q.filter(q => hfs.includes(q.hf)), seenQ = qs.filter(q => S.stats[q.id]).length, cover = seenQ / qs.length;
+  const seen = st.reduce((n, s) => n + s.seen, 0), right = st.reduce((n, s) => n + s.right, 0), rate = seen ? right / seen : 0, pct = Math.round(rate * 100);
+  const weak = st.filter(s => s.rate != null && s.rate < .6);
+  const sims = (S.simHistory || []).filter(h => h.teil === teil), last = sims[sims.length - 1];
+  const why = [];
+  if (cover < .3) return {cls: "", word: "Noch zu früh", why: `Du hast erst ${seenQ} von ${qs.length} Fragen gesehen. Übe weiter, dann kann die App mehr sagen.`, go: "fragen"};
+  if (weak.length) why.push(`Schwach: ${weak.map(s => s.name).join(", ")}`);
+  if (last && !last.passed) why.push(`Letzte Simulation: ${last.pct} %, nicht bestanden`);
+  if (why.length || rate < .5) return {cls: "low", word: "Noch nicht bereit", why: (why.length ? why : [`Erst ${pct} % deiner Antworten richtig`]).join(". ") + ".", go: "fragen"};
+  if (rate < .8) why.push(`${pct} % deiner Antworten richtig, Ziel 80 %`);
+  if (cover < .8) why.push(`erst ${seenQ} von ${qs.length} Fragen gesehen`);
+  if (!last) why.push("noch keine Prüfungssimulation gemacht");
+  if (why.length) { const t = why.join(", "); return {cls: "mid", word: "Fast bereit", why: t[0].toUpperCase() + t.slice(1) + ".", go: !last && why.length === 1 ? "sim" : "fragen"}; }
+  return {cls: "ok", word: "Bereit", why: `${pct} % deiner Antworten richtig, letzte Simulation mit ${last.pct} % bestanden. Bleib dran bis zur Prüfung.`, go: "sim"};
+}
+function readyCard() {
+  const hist = (S.simHistory || []).slice().reverse();
+  const dm = d => d.slice(8, 10) + "." + d.slice(5, 7) + ".";
+  return `<div class="card">
+    <h2>Bist du bereit für die Prüfung?</h2>
+    ${["III", "IV"].map(teil => { const r = readiness(teil); return `
+    <div class="ready">
+      <span class="light ${r.cls}" aria-hidden="true"></span>
+      <div><b>Teil ${teil}: ${r.word}</b><div class="small muted">${esc(r.why)}</div></div>
+      <button class="go" data-ready="${r.go}:${teil}">${r.go === "sim" ? "Simulieren" : "Üben"}</button>
+    </div>`; }).join("")}
+    ${hist.length ? `<details class="more"><summary>Deine letzten Prüfungssimulationen (${hist.length})</summary>
+      <ul class="plan">${hist.map(h => `<li style="grid-template-columns:1fr auto"><span>${dm(h.date)} · Teil ${h.teil}</span><b class="${h.passed ? "ok-t" : "no-t"}">${h.pct} % · ${h.passed ? "bestanden" : "nicht bestanden"}</b></li>`).join("")}</ul>
+    </details>` : ""}
+    <p class="small muted">Eine Einschätzung aus deinen Übungen, keine Garantie.</p>
+  </div>`;
+}
+
+/* ---------- Lernstand als Datei sichern und laden ---------- */
+async function exportState() {
+  const data = JSON.stringify({app: "meister-lern-app", version: 1, saved: new Date().toISOString(), state: S}, null, 1);
+  const filename = "meister-lernstand-" + today() + ".json";
+  // Auf der Handy-Testseite (claude.ai) geht Speichern nur über die Freigabe der Seite
+  if (window.claude && window.claude.use) {
+    const dl = await window.claude.use("downloads").catch(() => null);
+    if (dl) {
+      try { await dl.save({filename, data}); $("#io-msg").textContent = "Die Datei wurde gespeichert. Bewahre sie gut auf."; }
+      catch (e) { $("#io-msg").textContent = e && e.code === "declined" ? "Nicht gespeichert." : "Speichern geht hier leider nicht."; }
+      return;
+    }
+  }
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([data], {type: "application/json"}));
+  a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  $("#io-msg").textContent = "Die Datei wurde gespeichert (meist im Ordner „Downloads“). Bewahre sie gut auf.";
+}
+function importState(file) {
+  const msg = $("#io-msg"), r = new FileReader();
+  r.onload = () => {
+    let d;
+    try { d = JSON.parse(r.result); } catch (e) { d = null; }
+    const st = d && d.app === "meister-lern-app" && d.state;
+    if (!st || typeof st !== "object" || typeof st.stats !== "object" || typeof st.exam !== "string") {
+      msg.textContent = "Diese Datei ist kein Lernstand der Meister-Lern-App. Es wurde nichts geändert."; return;
+    }
+    S = st;
+    if (!Array.isArray(S.simHistory)) S.simHistory = [];
+    ["stats", "days", "selfscore", "answers", "seeds", "calc", "cases", "marked", "coach"].forEach(k => { if (!S[k] || typeof S[k] !== "object") S[k] = {}; });
+    S.n = S.n || 0;
+    if (S.sim && !(S.sim.ids && S.sim.picks && S.sim.order)) S.sim = null;
+    CASES = buildCases(); round = null; calcResult = null; simSetup = false; simConfirm = null; stopSimClock(); save(); renderHeute();
+    $("#io-msg").textContent = "Lernstand geladen. Alles ist wieder da.";
+  };
+  r.onerror = () => { msg.textContent = "Die Datei konnte nicht gelesen werden."; };
+  r.readAsText(file);
+}
+
+/* ---------- Ansicht: Fragen (Runden ohne Wiederholung) ---------- */
+let filter = "alle", round = null;   // round = {ids, pos, results, answered}
+S.n = S.n || 0;                       // Zähler aller Antworten, für Abstand zwischen Wiederholungen
+function isMistake(q) { const s = S.stats[q.id]; return !!s && s.seen > 0 && s.streak === 0; }
+S.marked = S.marked || {};             // gemerkte Fragen: id -> true
+const isMarked = q => !!S.marked[q.id];
+function poolFor(f) { return Q.filter(q => f === "alle" || (f === "fehler" ? isMistake(q) || isMarked(q) : q.hf.startsWith(f + "-"))); }
+/* Antworten, die nur aus Zahl (+ Einheit) oder Datum bestehen, werden aufsteigend sortiert statt gemischt */
+const UNIT_DAYS = {minute: 1 / 1440, minuten: 1 / 1440, stunde: 1 / 24, stunden: 1 / 24, tag: 1, tage: 1, tagen: 1, werktage: 1, woche: 7, wochen: 7, monat: 30, monate: 30, jahr: 365, jahre: 365};
+function numericKey(o) {
+  const m = /^([a-zäöü]{0,3}\.?)\s*(\d{1,2}\.\d{1,2}\.\d{4}|[-−]?\d[\d.]*(?:,\d+)?)\s*(€|%|stück|[a-z]+)?(.*)$/i.exec(o.trim());
+  if (!m) return null;
+  const unit = (m[3] || "").toLowerCase();
+  if (unit && !"€%".includes(unit) && unit !== "stück" && !(unit in UNIT_DAYS)) return null;
+  let v;
+  if (/^\d{1,2}\.\d{1,2}\.\d{4}$/.test(m[2])) { const [d, mo, y] = m[2].split("."); v = new Date(+y, mo - 1, +d).getTime(); }
+  else v = parseNum(m[2]) * (UNIT_DAYS[unit] || 1);
+  return isNaN(v) ? null : {pre: m[1].toLowerCase(), tail: m[4].trim().toLowerCase(), v};
+}
+function answerOrder(q) {
+  const keys = q.o.map(numericKey);
+  const same = f => keys.every(k => k && k[f] === keys[0][f]);
+  if (keys.every(k => k) && same("pre") && same("tail")) return q.o.map((_, i) => i).sort((a, b) => keys[a].v - keys[b].v);
+  return shuffle(q.o.map((_, i) => i));
+}
+// Rechtsgrundlage nur als „Steht in“ zeigen, wenn es wirklich eine Vorschrift ist
+const isNorm = l => /§|Art\.|\b(BGB|HGB|BBiG|UStG|KStG|EStG|GewStG|AO|AGG|HwO|VOB|JArbSchG|ArbZG|BUrlG|KSchG|MuSchG|NachwG|GmbHG|InsO|SGB|ArbSchG|AEVO|BetrVG|TzBfG|EntgFG|MiLoG|GewO|PartGG|UWG|ZPO|DSGVO|BDSG|ProdHaftG)\b/.test(l || "");
+function priority(q, poolSize) {
+  const s = S.stats[q.id];
+  let p;
+  if (!s) p = 1;                                            // neu
+  else if (s.streak >= REPS) p = 3;                         // sitzt
+  else p = 0.4 + 0.6 * (s.right / s.seen) + 0.2 * s.streak; // schwach zuerst
+  const gap = Math.min(10, poolSize - 1);                   // kürzlich gesehene Fragen nach hinten
+  if (s && s.last != null && S.n - s.last < gap) p += 2;
+  return p + Math.random() * 0.25;
+}
+function roundSize() {
+  const perDay = dailyPlan().perDay || 5;
+  const rest = perDay - dayLog().q;
+  return Math.min(rest > 0 ? rest : 5, 10);
+}
+function hfWeight(rate) { return rate == null ? 2 : rate < .6 ? 3 : rate < .8 ? 2 : 1; } // rot bekommt am meisten
+function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+const NEW_SHARE = 0.4;   // so viel einer Runde ist für noch nie gesehene Fragen reserviert, damit man nicht in Wiederholungen hängen bleibt
+function newRound() {
+  const pool = poolFor(filter);
+  const size = Math.min(roundSize(), pool.length);
+  const rates = Object.fromEntries(hfStats().map(h => [h.k, h.rate]));
+  // je Handlungsfeld die Fragen nach Dringlichkeit sortieren, neue und schon gesehene getrennt
+  const sorted = qs => {
+    const byHf = {};
+    qs.forEach(q => (byHf[q.hf] = byHf[q.hf] || []).push([q.id, priority(q, pool.length)]));
+    Object.values(byHf).forEach(a => a.sort((x, y) => x[1] - y[1]));
+    return byHf;
+  };
+  const fresh = sorted(pool.filter(q => !S.stats[q.id])), seen = sorted(pool.filter(q => S.stats[q.id]));
+  const ids = [], used = {};
+  let lastHf = null;
+  function take(byHf, until) {
+    while (ids.length < until) {
+      let hfs = Object.keys(byHf).filter(k => byHf[k].length);
+      if (!hfs.length) break;
+      // möglichst nicht zweimal dasselbe Feld hintereinander, und jedes Feld höchstens 2x pro Runde, solange andere frei sind
+      const free = hfs.filter(k => k !== lastHf && (used[k] || 0) < 2);
+      if (free.length) hfs = free;
+      const w = hfs.map(k => hfWeight(rates[k]) / (1 + (used[k] || 0)));
+      let r = Math.random() * w.reduce((a, b) => a + b, 0), k = hfs[0];
+      for (let i = 0; i < hfs.length; i++) { r -= w[i]; if (r <= 0) { k = hfs[i]; break; } }
+      ids.push(byHf[k].shift()[0]); used[k] = (used[k] || 0) + 1; lastHf = k;
+    }
+  }
+  take(fresh, Math.ceil(size * NEW_SHARE));   // erst die reservierten neuen Fragen
+  // den Rest wie gehabt nach Dringlichkeit: schwache Wiederholungen, neue und sichere Fragen gemischt
+  Object.keys(fresh).forEach(k => { seen[k] = (seen[k] || []).concat(fresh[k]).sort((x, y) => x[1] - y[1]); });
+  take(seen, size);
+  // neue und alte Fragen mischen, aber möglichst nicht zweimal dasselbe Handlungsfeld hintereinander
+  shuffle(ids);
+  const hfOf = id => Q.find(q => q.id === id).hf;
+  for (let i = 1; i < ids.length; i++) {
+    if (hfOf(ids[i]) !== hfOf(ids[i - 1])) continue;
+    const j = ids.findIndex((id, x) => x > i && hfOf(id) !== hfOf(ids[i - 1]));
+    if (j > 0) [ids[i], ids[j]] = [ids[j], ids[i]];
+  }
+  round = {ids, pos: 0, results: [], answered: null, order: {}};
+}
+function renderFragen() {
+  if (S.sim || simSetup) return renderSim();
+  if (!round) newRound();
+  const v = $("#v-fragen");
+  const segs = `<div class="seg" role="group" aria-label="Prüfungsteil">
+      ${[["alle","Alle"],["III","Teil III"],["IV","Teil IV"],["fehler","Wiederholen"]].map(([k,t]) => `<button data-f="${k}" aria-pressed="${filter === k}">${t}</button>`).join("")}
+    </div>`;
+  const total = round.ids.length;
+  const head = `<h2 class="sr view-h" tabindex="-1">Fragen</h2>`;
+
+  if (!total) {                                              // „Wiederholen“, aber es gibt nichts
+    v.innerHTML = `${head}
+    <div class="card">
+      ${segs}
+      <h2>Nichts zu wiederholen</h2>
+      <p>${Object.keys(S.stats).length ? "Super! Jede Frage, die du zuletzt falsch hattest, hast du inzwischen richtig beantwortet." : "Du hast noch keine Fragen beantwortet. Fang mit „Alle“ an."}</p>
+      <p class="small muted">Hier landen Fragen, die du falsch beantwortet hast, und Fragen, die du mit ☆ Merken markiert hast.</p>
+      <button class="btn accent" id="to-all">Alle Fragen üben</button>
+    </div>${simEntry()}`;
+    bindSegs(v);
+    $("#to-all").addEventListener("click", () => { filter = "alle"; newRound(); renderFragen(); });
+    return;
+  }
+
+  if (round.pos >= total) {                                  // Runde fertig
+    const right = round.results.filter(r => r.ok).length;
+    const wrong = round.results.filter(r => !r.ok).map(r => Q.find(q => q.id === r.id));
+    v.innerHTML = `${head}
+    <div class="card">
+      ${segs}
+      <h2>Runde geschafft</h2>
+      <div class="count"><b>${right}</b><span>von ${total} richtig</span></div>
+      <div class="bar" role="img" aria-label="${right} von ${total} richtig"><i class="${right / total >= .8 ? "ok" : right / total < .6 ? "low" : ""}" style="width:${Math.round(right / total * 100)}%"></i></div>
+      ${wrong.length ? `<div class="explain"><b>Diese Fragen üben wir in den nächsten Runden noch einmal:</b>
+        ${wrong.map(q => `<p class="small">${esc(q.q)}<br><span class="muted">Richtig: ${esc(q.o[q.a])}</span></p>`).join("")}</div>`
+        : `<p>Alles richtig, stark! Diese Fragen kommen erst später zur Wiederholung.</p>`}
+      <div class="row"><button class="btn accent" id="again">Nächste Runde</button><button class="btn ghost" id="home">Zurück zu Heute</button></div>
+    </div>${simEntry()}`;
+    $("#again").addEventListener("click", () => { newRound(); renderFragen(); });
+    $("#home").addEventListener("click", () => { round = null; show("heute"); });
+    bindSegs(v); $("#again").focus(); return;
+  }
+
+  const q = Q.find(x => x.id === round.ids[round.pos]), s = S.stats[q.id], answered = round.answered;
+  // Antworten in zufälliger Reihenfolge, damit man sich nicht die Position merkt (im Katalog ist oft B richtig); reine Zahlen aufsteigend
+  const order = round.order[q.id] || (round.order[q.id] = answerOrder(q));
+  v.innerHTML = `${head}
+  <div class="card">
+    ${segs}
+    <div class="row" style="justify-content:space-between"><b>Frage ${round.pos + 1} von ${total}</b>
+      <span class="small muted">${round.results.filter(r => r.ok).length} richtig</span></div>
+    <div class="bar" aria-hidden="true"><i style="width:${Math.round(round.pos / total * 100)}%"></i></div>
+    <div class="qtools">${markBtn(q)}${voiceTools()}</div>
+    <div class="qmeta"><span>Teil ${q.hf.split("-")[0]} · ${esc(HF[q.hf])}</span><span class="pill draft" title="Prüfstatus laut Fragenkatalog: ${esc(q.p || "Entwurf")}">${esc(statusShort(q.p))} · noch nicht vom Dozenten geprüft</span>
+      ${s && (answered == null ? s.seen : s.seen - 1) > 0 ? `<span>schon ${answered == null ? s.seen : s.seen - 1}× gesehen</span>` : `<span>neu</span>`}</div>
+    <div class="qtext" id="qtext" tabindex="-1">${esc(q.q)}</div>
+    <div class="opts">${order.map((i, pos) => {
+      let cls = "", tag = "";
+      if (answered != null) {
+        if (i === q.a) { cls = "right"; tag = "<em>✓ Richtige Antwort</em>"; }
+        else if (i === answered) { cls = "wrong"; tag = "<em>✗ Deine Antwort</em>"; }
+      }
+      return `<button class="opt ${cls}" data-i="${i}" ${answered != null ? "disabled" : ""}><b>${"ABCD"[pos]}</b><span>${esc(q.o[i])}</span>${tag}</button>`; }).join("")}
+    </div>
+    ${answered != null ? `
+    <div class="explain" role="status" id="explain" tabindex="-1">
+      <div class="verdict ${answered === q.a ? "ok" : "no"}">${answered === q.a ? "Richtig." : "Nicht ganz. Richtig ist " + "ABCD"[order.indexOf(q.a)] + "."}</div>
+      <p>${esc(q.e)}</p>
+      <div class="law">${isNorm(q.l) ? "Steht in: " + esc(q.l) : "Thema: " + esc(q.t || q.l)} · Stand 17.10.2026</div>
+    </div>
+    <button class="btn accent" id="next">${round.pos + 1 < total ? "Nächste Frage" : "Ergebnis ansehen"}</button>` : ""}
+  </div>
+  ${simEntry()}
+  <p class="small muted" style="margin-top:16px">${Q.length} Fragen im Prototyp. Ziel laut Konzept: etwa 400.</p>`;
+  bindSegs(v);
+  bindVoice(v, renderFragen);
+  // Hör-Modus: neue Frage vorlesen, nach dem Antworten Ergebnis und Erklärung
+  if (answered == null) speakOnce(q.id + ":q", () => questionSpeech(q, order));
+  else speakOnce(q.id + ":a", () => [answered === q.a ? "Richtig." : `Nicht ganz. Richtig ist ${"ABCD"[order.indexOf(q.a)]}: ${q.o[q.a]}.`, q.e]);
+  v.querySelectorAll(".opt:not(:disabled)").forEach(b => b.addEventListener("click", () => answer(q, +b.dataset.i)));
+  const n = $("#next");
+  if (n) {
+    n.addEventListener("click", () => { round.pos++; round.answered = null; renderFragen(); window.scrollTo(0, 0); const t = $("#qtext"); if (t) t.focus({preventScroll: true}); });
+    // Erklärung sichtbar machen, Fokus auf „Nächste Frage“, ohne dass die Seite an der Erklärung vorbeispringt
+    n.focus({preventScroll: true});
+    const ex = $("#explain"); if (ex && ex.getBoundingClientRect().bottom > innerHeight) ex.scrollIntoView({block: "start", behavior: "smooth"});
+  }
+}
+function statusShort(p) {   // Prüfstatus aus dem Fragenkatalog in Kurzform; vom Dozenten geprüft ist noch keine Frage
+  p = p || "";
+  if (/gesetz|verordnung/i.test(p)) return "Gesetz nachgelesen";
+  if (/quelle/i.test(p)) return "Quelle belegt";
+  if (/rechnung/i.test(p)) return "Nachgerechnet";
+  return "Entwurf";
+}
+/* ---------- Fragen merken ---------- */
+function markBtn(q) {
+  const m = isMarked(q);
+  return `<button class="tool" data-mark="${q.id}" aria-pressed="${m}">${m ? "★ Gemerkt" : "☆ Merken"}</button>`;
+}
+function bindMarks(v) {
+  v.querySelectorAll("[data-mark]").forEach(b => b.addEventListener("click", () => {
+    const id = b.dataset.mark;
+    if (S.marked[id]) delete S.marked[id]; else S.marked[id] = true;
+    save();
+    b.setAttribute("aria-pressed", !!S.marked[id]); b.textContent = S.marked[id] ? "★ Gemerkt" : "☆ Merken";
+  }));
+}
+
+/* ---------- Hör-Modus: Fragen vorlesen (Sprachausgabe des Handys) ---------- */
+const canSpeak = (() => { try { return "speechSynthesis" in window && typeof SpeechSynthesisUtterance !== "undefined"; } catch (e) { return false; } })();
+let spokenKey = null;
+function sayable(t) {   // Abkürzungen und Zeichen so umschreiben, dass die Stimme sie richtig ausspricht
+  return String(t)
+    .replace(/§§/g, "Paragrafen ").replace(/§/g, "Paragraf ").replace(/€/g, " Euro").replace(/%/g, " Prozent")
+    .replace(/\bz\. ?B\./g, "zum Beispiel").replace(/\bd\. ?h\./g, "das heißt").replace(/\bu\. ?a\./g, "unter anderem")
+    .replace(/\bbzw\./g, "beziehungsweise").replace(/\bggf\./g, "gegebenenfalls").replace(/\bAbs\./g, "Absatz").replace(/\bNr\./g, "Nummer")
+    .replace(/\bS\. (\d)/g, "Satz $1").replace(/\bca\./g, "circa").replace(/\binkl\./g, "inklusive").replace(/\bvs\./g, "gegenüber")
+    .replace(/(\d)\.(\d{3})\b/g, "$1$2").replace(/ – /g, ", ").replace(/[„“"]/g, "");
+}
+function germanVoice() {
+  try { const vs = speechSynthesis.getVoices(); return vs.find(v => /^de(-|_)DE/i.test(v.lang) && v.localService) || vs.find(v => /^de/i.test(v.lang)) || null; } catch (e) { return null; }
+}
+function speak(parts) {
+  if (!canSpeak) return;
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(sayable(parts.filter(Boolean).join(" \n")));
+    u.lang = "de-DE"; u.rate = .95;
+    const gv = germanVoice(); if (gv) u.voice = gv;
+    speechSynthesis.speak(u);
+  } catch (e) {}
+}
+function stopSpeak() { spokenKey = null; if (canSpeak) try { speechSynthesis.cancel(); } catch (e) {} }
+function speakOnce(key, parts) { if (!S.voice || !canSpeak || spokenKey === key) return; spokenKey = key; speak(parts()); }
+const questionSpeech = (q, order) => [q.q, ...order.map((i, pos) => `${"ABCD"[pos]}: ${q.o[i]}.`)];
+function voiceTools() {
+  if (!canSpeak) return "";
+  return `<button class="tool" data-voice aria-pressed="${!!S.voice}">${S.voice ? "🔊 Vorlesen an" : "🔈 Vorlesen aus"}</button>
+    ${S.voice ? `<button class="tool" data-voice-again aria-label="Nochmal vorlesen">↻ Nochmal</button>` : ""}`;
+}
+function bindVoice(v, rerender) {
+  const t = $("[data-voice]", v); if (t) t.addEventListener("click", () => { S.voice = !S.voice; save(); stopSpeak(); rerender(); const n = $("[data-voice]", v); if (n) n.focus(); });
+  const a = $("[data-voice-again]", v); if (a) a.addEventListener("click", () => { spokenKey = null; rerender(); });
+  bindMarks(v);
+}
+
+function bindSegs(v) {
+  const so = $("#sim-open", v); if (so) so.addEventListener("click", () => { simSetup = true; renderFragen(); window.scrollTo(0, 0); focusView(); });
+  v.querySelectorAll("[data-f]").forEach(b => b.addEventListener("click", () => { filter = b.dataset.f; newRound(); renderFragen(); }));
+}
+function recordAnswer(q, ok) {   // zählt für Lernstand, Schwächen und Tagesaufgabe (auch in der Simulation)
+  const s = S.stats[q.id] || (S.stats[q.id] = {seen:0, right:0, streak:0});
+  s.seen++; if (ok) { s.right++; s.streak++; } else s.streak = 0;
+  s.last = S.n++;
+  const dl = dayLog(); dl.q++; if (ok) dl.qr++;
+}
+function answer(q, i) {
+  const ok = i === q.a;
+  recordAnswer(q, ok);
+  round.results.push({id: q.id, ok}); round.answered = i;
+  save(); renderFragen();
+}
+function focusView() { const h = $("#v-fragen .view-h"); if (h) h.focus({preventScroll: true}); }
+
+/* ---------- Prüfungssimulation ----------
+   30 Fragen aus allen schriftlichen Handlungsfeldern eines Teils, gleichmäßig verteilt, 1 Minute pro Frage.
+   Warum 1 Minute: Die Fragen hier sind kurz. Wer sie in einer Minute sicher beantwortet, hat in der echten
+   Prüfung Luft für die langen Fallaufgaben. Der Lauf steht in S.sim, damit er ein Neuladen übersteht. */
+const SIM_N = 30, SIM_MIN_PER_Q = 1;
+const SIM_HF = {III: ["III-1", "III-2", "III-3"], IV: ["IV-1", "IV-2", "IV-3", "IV-4"]};   // IV-P ist mündlich, nicht Teil der schriftlichen Prüfung
+let simSetup = false, simConfirm = null, simTimer = null, simWarned = 0;
+const qById = id => Q.find(q => q.id === id);
+const simRunning = () => !!(S.sim && !S.sim.result);
+function clockText(ms) { const t = Math.max(0, Math.ceil(ms / 1000)); return Math.floor(t / 60) + ":" + String(t % 60).padStart(2, "0"); }
+function startSim(teil) {
+  const hfs = SIM_HF[teil], pools = {}, ids = [];
+  hfs.forEach(k => pools[k] = shuffle(Q.filter(q => q.hf === k).map(q => q.id)));
+  const turn = shuffle(hfs.slice());
+  for (let i = 0; ids.length < SIM_N && hfs.some(k => pools[k].length); i++) { const k = turn[i % turn.length]; if (pools[k].length) ids.push(pools[k].pop()); }
+  shuffle(ids);
+  const order = {}; ids.forEach(id => order[id] = answerOrder(qById(id)));
+  S.sim = {teil, ids, pos: 0, picks: {}, order, start: Date.now(), end: Date.now() + ids.length * SIM_MIN_PER_Q * 60000};
+  simSetup = false; simConfirm = null; simWarned = 0; save();
+}
+function finishSim(timeUp) {
+  const sim = S.sim, byHf = {}, wrong = [];
+  let right = 0;
+  sim.ids.forEach(id => {
+    const q = qById(id), pick = sim.picks[id], ok = pick === q.a;
+    if (pick != null) recordAnswer(q, ok);                     // nicht beantwortete Fragen zählen als falsch, aber nicht im Lernstand
+    const h = byHf[q.hf] || (byHf[q.hf] = {right: 0, total: 0});
+    h.total++; if (ok) { h.right++; right++; } else wrong.push(id);
+  });
+  const pct = Math.round(right / sim.ids.length * 100);
+  const weak = Object.keys(byHf).filter(k => byHf[k].right / byHf[k].total < .3);
+  sim.result = {right, total: sim.ids.length, pct, byHf, wrong, weak, passed: pct >= 50 && !weak.length, timeUp: !!timeUp,
+    open: sim.ids.filter(id => sim.picks[id] == null).length, used: Math.min(Date.now(), sim.end) - sim.start};
+  dayLog().sim++;
+  S.simHistory = (S.simHistory || []).concat({date: today(), teil: sim.teil, pct, passed: sim.result.passed}).slice(-10);   // für „Bist du bereit?“ auf Heute
+  stopSpeak();
+  simConfirm = null; stopSimClock(); save();
+}
+function stopSimClock() { if (simTimer) { clearInterval(simTimer); simTimer = null; } }
+function ensureSimClock() {
+  if (simTimer || !simRunning()) return;
+  simTimer = setInterval(() => {
+    if (!simRunning()) return stopSimClock();
+    const rest = S.sim.end - Date.now();
+    if (rest <= 0) { finishSim(true); if (!$("#v-fragen").hidden) { renderSim(); window.scrollTo(0, 0); focusView(); } return; }
+    const c = $("#sim-clock");
+    if (c) { c.textContent = clockText(rest); c.classList.toggle("warn", rest <= 300000); }
+    // Bildschirmleser: einmal bei 5 Minuten und einmal bei 1 Minute ansagen
+    const live = $("#sim-live"), mark = rest <= 60000 ? 2 : rest <= 300000 ? 1 : 0;
+    if (live && mark > simWarned) { simWarned = mark; live.textContent = mark === 2 ? "Noch 1 Minute." : "Noch 5 Minuten."; }
+  }, 1000);
+}
+function simEntry() {
+  return `<div class="card" style="margin-top:16px">
+    <h3>Prüfung simulieren</h3>
+    <p class="small muted">${SIM_N} gemischte Fragen aus Teil III oder Teil IV, ${SIM_N * SIM_MIN_PER_Q} Minuten Zeit. Die Lösungen siehst du erst am Ende.</p>
+    <button class="btn ghost" id="sim-open">Prüfung simulieren</button>
+  </div>`;
+}
+function renderSim() {
+  const v = $("#v-fragen"), head = `<h2 class="sr view-h" tabindex="-1">Prüfungssimulation</h2>`;
+  if (S.sim && S.sim.result) return renderSimResult(v, head);
+  if (simRunning() && Date.now() >= S.sim.end) { finishSim(true); return renderSimResult(v, head); }   // Zeit lief ab, während die App zu war
+
+  if (!S.sim) {                                                                  // Auswahl Teil III / Teil IV
+    const nIII = Q.filter(q => SIM_HF.III.includes(q.hf)).length, nIV = Q.filter(q => SIM_HF.IV.includes(q.hf)).length;
+    v.innerHTML = `${head}
+    <div class="card">
+      <h2>Prüfung simulieren</h2>
+      <p>Übe wie in der echten Prüfung: <b>${SIM_N} Fragen, ${SIM_N * SIM_MIN_PER_Q} Minuten.</b> Die Uhr läuft oben mit. Ob du richtig liegst, siehst du erst am Ende.</p>
+      <ul class="howto">
+        <li>Du kannst mit „Zurück“ Antworten noch ändern.</li>
+        <li>Die Uhr läuft weiter, auch wenn du die App kurz verlässt.</li>
+        <li>Bestanden ab 50 %. Was das genau heißt, steht am Ende.</li>
+      </ul>
+      <div class="choice">
+        <button class="btn accent" data-sim="III"><b>Teil III starten</b><span>Betriebswirtschaft und Recht · Fragen aus ${SIM_HF.III.length} Handlungsfeldern (${nIII} im Katalog)</span></button>
+        <button class="btn accent" data-sim="IV"><b>Teil IV starten</b><span>Ausbildung · Fragen aus ${SIM_HF.IV.length} Handlungsfeldern (${nIV} im Katalog)</span></button>
+      </div>
+      <details class="more"><summary>Warum 1 Minute pro Frage?</summary>
+        <p class="small">Die Fragen hier sind kurz. Wer sie in einer Minute sicher beantwortet, hat in der echten Prüfung genug Zeit für die langen Fallaufgaben. So übst du Tempo und Ruhe unter Zeitdruck.</p></details>
+      <button class="btn ghost" id="sim-back">Zurück zum Üben</button>
+    </div>`;
+    v.querySelectorAll("[data-sim]").forEach(b => b.addEventListener("click", () => { startSim(b.dataset.sim); renderSim(); window.scrollTo(0, 0); const t = $("#qtext"); if (t) t.focus({preventScroll: true}); }));
+    $("#sim-back").addEventListener("click", () => { simSetup = false; renderFragen(); window.scrollTo(0, 0); focusView(); });
+    return;
+  }
+
+  const sim = S.sim, total = sim.ids.length, q = qById(sim.ids[sim.pos]), pick = sim.picks[q.id];
+  const done = Object.keys(sim.picks).length, open = total - done, last = sim.pos + 1 === total, rest = sim.end - Date.now();
+  const confirm = simConfirm === "submit" ? `
+    <div class="confirm" role="alert"><b>Noch ${open} ${open === 1 ? "Frage" : "Fragen"} ohne Antwort.</b>
+      <span class="small">Offene Fragen zählen als falsch. Trotzdem abgeben?</span>
+      <div class="row"><button class="btn accent" id="sim-submit-yes">Ja, abgeben</button><button class="btn ghost" id="sim-to-open">Zur ersten offenen Frage</button></div></div>`
+    : simConfirm === "cancel" ? `
+    <div class="confirm" role="alert"><b>Simulation abbrechen?</b>
+      <span class="small">Deine Antworten aus dieser Simulation werden dann nicht gewertet.</span>
+      <div class="row"><button class="btn ghost" id="sim-cancel-yes">Ja, abbrechen</button><button class="btn accent" id="sim-cancel-no">Weitermachen</button></div></div>` : "";
+  v.innerHTML = `${head}
+  <div class="simbar">
+    <div><div class="small muted">Restzeit</div><b class="clock ${rest <= 300000 ? "warn" : ""}" id="sim-clock" role="timer" aria-label="Restzeit in Minuten">${clockText(rest)}</b></div>
+    <div style="text-align:right"><b>Frage ${sim.pos + 1} von ${total}</b><div class="small muted">${done} beantwortet · Teil ${sim.teil}</div></div>
+    <span class="sr" role="status" id="sim-live"></span>
+  </div>
+  <div class="card" style="margin-top:12px">
+    <div class="bar" aria-hidden="true"><i style="width:${Math.round(done / total * 100)}%"></i></div>
+    <div class="qtools">${voiceTools()}</div>
+    <div class="qmeta"><span>Teil ${q.hf.split("-")[0]} · ${esc(HF[q.hf])}</span></div>
+    <div class="qtext" id="qtext" tabindex="-1">${esc(q.q)}</div>
+    <div class="opts">${sim.order[q.id].map((i, pos) => `<button class="opt ${pick === i ? "picked" : ""}" data-i="${i}" aria-pressed="${pick === i}"><b>${"ABCD"[pos]}</b><span>${esc(q.o[i])}</span>${pick === i ? "<em>● Deine Wahl</em>" : ""}</button>`).join("")}</div>
+    <div class="row">
+      <button class="btn ghost" id="sim-prev" ${sim.pos ? "" : "disabled"} style="flex:1">Zurück</button>
+      <button class="btn ${last ? "accent" : ""}" id="sim-next" style="flex:1">${last ? "Abgeben" : "Weiter"}</button>
+    </div>
+    ${confirm}
+    ${simConfirm ? "" : `<div class="row"><button class="btn ghost" id="sim-submit" style="flex:1">Jetzt abgeben</button><button class="btn ghost" id="sim-cancel" style="flex:1">Abbrechen</button></div>`}
+  </div>`;
+  const go = pos => { sim.pos = pos; simConfirm = null; save(); renderSim(); window.scrollTo(0, 0); const t = $("#qtext"); if (t) t.focus({preventScroll: true}); };
+  const submit = () => { if (open) { simConfirm = "submit"; renderSim(); const y = $("#sim-submit-yes"); if (y) y.focus(); } else { finishSim(false); renderSim(); window.scrollTo(0, 0); focusView(); } };
+  v.querySelectorAll(".opt").forEach(b => b.addEventListener("click", () => {
+    sim.picks[q.id] = +b.dataset.i; simConfirm = null; save();
+    // kurz zeigen, was gewählt wurde, dann automatisch weiter (außer bei der letzten Frage)
+    renderSim();
+    if (!last) setTimeout(() => { if (S.sim === sim && !sim.result && sim.ids[sim.pos] === q.id) go(sim.pos + 1); }, 350);
+    else { const n = $("#sim-next"); if (n) n.focus(); }
+  }));
+  $("#sim-prev").addEventListener("click", () => go(sim.pos - 1));
+  $("#sim-next").addEventListener("click", () => last ? submit() : go(sim.pos + 1));
+  const bind = (id, f) => { const b = $(id); if (b) b.addEventListener("click", f); };
+  bind("#sim-submit", submit);
+  bind("#sim-cancel", () => { simConfirm = "cancel"; renderSim(); $("#sim-cancel-no").focus(); });
+  bind("#sim-submit-yes", () => { finishSim(false); renderSim(); window.scrollTo(0, 0); focusView(); });
+  bind("#sim-to-open", () => go(sim.ids.findIndex(id => sim.picks[id] == null)));
+  bind("#sim-cancel-yes", () => { S.sim = null; simConfirm = null; stopSimClock(); save(); renderFragen(); window.scrollTo(0, 0); focusView(); });
+  bind("#sim-cancel-no", () => { simConfirm = null; renderSim(); });
+  bindVoice(v, renderSim);
+  speakOnce("sim:" + q.id, () => questionSpeech(q, sim.order[q.id]));
+  ensureSimClock();
+}
+function renderSimResult(v, head) {
+  const sim = S.sim, r = sim.result, mins = Math.max(1, Math.round(r.used / 60000));
+  const nearly = r.pct >= 50 && r.weak.length;
+  v.innerHTML = `${head}
+  <div class="card">
+    <h2>Ergebnis Teil ${sim.teil}</h2>
+    <div class="count"><b>${r.pct} %</b><span>${r.right} von ${r.total} richtig</span></div>
+    <div class="bar" role="img" aria-label="${r.pct} Prozent richtig"><i class="${r.passed ? "ok" : "low"}" style="width:${r.pct}%"></i></div>
+    <div class="verdict-box ${r.passed ? "" : "no"}" role="status">
+      <b>${r.passed ? "Bestanden" : "Noch nicht bestanden"}</b>
+      <span>${r.passed ? "Du hast mindestens 50 % geschafft. Gut gemacht!"
+        : nearly ? `Du hast zwar ${r.pct} % geschafft, aber in ${r.weak.length === 1 ? "einem Handlungsfeld" : r.weak.length + " Handlungsfeldern"} weniger als 30 %. Das reicht nicht (siehe unten).`
+        : "Du brauchst mindestens 50 %. Übe die Fragen unten und versuch es noch einmal."}</span>
+    </div>
+    <p class="small muted">${r.timeUp ? `Die Zeit war abgelaufen.${r.open ? ` ${r.open} ${r.open === 1 ? "Frage blieb" : "Fragen blieben"} offen und ${r.open === 1 ? "zählt" : "zählen"} als falsch.` : ""}` : `Gebraucht: ${mins} von ${r.total * SIM_MIN_PER_Q} Minuten.${r.open ? ` ${r.open} offen abgegeben, ${r.open === 1 ? "zählt" : "zählen"} als falsch.` : ""}`}</p>
+    <h3>Nach Handlungsfeld</h3>
+    <div class="bars">${SIM_HF[sim.teil].filter(k => r.byHf[k]).map(k => {
+      const h = r.byHf[k], pct = Math.round(h.right / h.total * 100), low = pct < 30;
+      return `<div class="bar-row">
+        <div class="bar-head"><b>${esc(HF[k])}</b><span class="status ${low ? "low" : pct >= 50 ? "ok" : ""}">${h.right} von ${h.total} · ${pct} %</span></div>
+        <div class="bar" role="img" aria-label="${esc(HF[k])}: ${pct} Prozent"><i class="${low ? "low" : pct >= 50 ? "ok" : ""}" style="width:${pct}%"></i></div>
+        ${low ? `<div class="small no-t">Unter 30 %: In der echten Prüfung wäre das „ungenügend“.</div>` : ""}
+      </div>`; }).join("")}</div>
+    <details class="more"><summary>Wann ist man in der echten Prüfung bestanden?</summary>
+      <div class="small" style="display:flex;flex-direction:column;gap:8px">
+        <p>Die Regeln stehen in der Allgemeinen Meisterprüfungsverordnung (AMVO). Vereinfacht: Du brauchst im Durchschnitt mindestens <b>50 von 100 Punkten</b> („ausreichend“). Außerdem darf <b>kein Handlungsfeld unter 30 Punkten</b> liegen („ungenügend“).</p>
+        <p>Diese Simulation rechnet genauso, nur mit Prozent statt Punkten. Die echte Prüfung besteht aber vor allem aus Fallaufgaben, nicht nur aus Ankreuzfragen. Das Ergebnis hier ist deshalb nur ein Anhaltspunkt und <b>keine Garantie</b>.</p>
+        <p class="muted">Entwurf, Stand 17.10.2026. Noch nicht von einem Dozenten oder der Handwerkskammer geprüft.</p>
+      </div></details>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h2>${r.wrong.length ? `Diese ${r.wrong.length} ${r.wrong.length === 1 ? "Frage solltest" : "Fragen solltest"} du dir ansehen` : "Alles richtig!"}</h2>
+    ${r.wrong.length ? `<p class="small muted">Falsch beantwortete Fragen findest du danach auch unter „Wiederholen“. Mit ☆ Merken kannst du weitere dazulegen.</p>` : `<p>Keine einzige falsche Antwort. Stark!</p>`}
+    ${r.wrong.map((id, n) => { const q = qById(id), p = sim.picks[id], ord = sim.order[id];
+      return `<div class="wrong-item">
+        <div class="row" style="justify-content:space-between"><span class="small muted">${n + 1}. · ${esc(HF[q.hf])}</span>${markBtn(q)}</div>
+        <div class="qtext">${esc(q.q)}</div>
+        <p class="small"><span class="no-t"><b>${p == null ? "Nicht beantwortet" : "Deine Antwort: " + "ABCD"[ord.indexOf(p)] + ") " + esc(q.o[p])}</b></span><br>
+          <span class="ok-t"><b>Richtig: ${"ABCD"[ord.indexOf(q.a)]}) ${esc(q.o[q.a])}</b></span></p>
+        <div class="explain"><p>${esc(q.e)}</p><div class="law">${isNorm(q.l) ? "Steht in: " + esc(q.l) : "Thema: " + esc(q.t || q.l)} · Stand 17.10.2026</div></div>
+      </div>`; }).join("")}
+  </div>
+  <div class="card" style="margin-top:16px">
+    <div class="row">
+      ${r.wrong.some(id => sim.picks[id] != null) ? `<button class="btn accent" id="sim-errors" style="flex:1 1 180px">Fehler wiederholen</button>` : ""}
+      <button class="btn ${r.wrong.some(id => sim.picks[id] != null) ? "ghost" : "accent"}" id="sim-again" style="flex:1 1 180px">Noch eine Simulation</button>
+      <button class="btn ghost" id="sim-home" style="flex:1 1 180px">Zurück zu Heute</button>
+    </div>
+  </div>`;
+  bindMarks(v);
+  const leave = () => { S.sim = null; save(); };
+  const bind = (id, f) => { const b = $(id); if (b) b.addEventListener("click", f); };
+  bind("#sim-errors", () => { leave(); filter = "fehler"; round = null; renderFragen(); window.scrollTo(0, 0); focusView(); });
+  bind("#sim-again", () => { leave(); simSetup = true; renderFragen(); window.scrollTo(0, 0); focusView(); });
+  bind("#sim-home", () => { leave(); round = null; show("heute", true); });
+}
+/* ---------- Ansicht: Rechnen (Zufallszahlen) ---------- */
+/* Rechenweg wie in der Prüfung: Kalkulationsschema untereinander (op, Text, Betrag; „=“-Zeilen mit Summenstrich,
+   Ergebnis doppelt unterstrichen), Prozent- und Teilungsrechnungen darunter als Nebenrechnungen. */
+const pz = z => num(z, z % 1 ? 1 : 0);
+const GEN = {
+  stundensatz: {name: "Stundensatz", what: "Der Stundensatz ist der Preis, den du dem Kunden für eine Arbeitsstunde berechnest. Er muss alle Kosten des Betriebs decken und etwas Gewinn bringen.", make() {
+    const K = pick(range(100000, 300000, 2000)), h = pick(range(2000, 5000, 100)), g = pick([5, 8, 10, 12]);
+    const sk = r2(K / h), gz = r2(sk * g / 100), net = r2(sk + gz), ust = r2(net * .19), br = r2(net + ust);
+    return {task: "Berechne den Brutto-Stundenverrechnungssatz.", given: [["Gesamtkosten pro Jahr", eur(K, 0)], ["Produktive Stunden", num(h)], ["Gewinnzuschlag", g + " %"], ["Umsatzsteuer", "19 %"]],
+      unit: "€", answer: br, tol: .02,
+      scheme: [["", "Selbstkosten je Stunde", eur(sk)], ["+", `Gewinnzuschlag ${g} %`, eur(gz)], ["=", "Verrechnungssatz netto", eur(net)], ["+", "Umsatzsteuer 19 %", eur(ust)], ["=", "Verrechnungssatz brutto", eur(br), 1]],
+      side: [`Selbstkosten je Stunde: ${eur(K, 0)} : ${num(h)} Std. = ${eur(sk)}`, `Gewinnzuschlag: ${eur(sk)} × ${g} : 100 = ${eur(gz)}`, `Umsatzsteuer: ${eur(net)} × 19 : 100 = ${eur(ust)}`]};
+  }},
+  kapitaldienst: {name: "Kapitaldienst", what: "Kapitaldienst = Zinsen + Tilgung. Das ist der Betrag, den du jedes Jahr für einen Kredit an die Bank zahlst.", make() {
+    const n = pick([5, 8, 10]), D = pick(range(20000, 120000, 10000)), z = pick([3, 4, 4.5, 5, 6, 7]);
+    const t = r2(D / n), zi = r2(D * z / 100), kd = r2(t + zi), m = r2(kd / 12);
+    return {task: "Berechne den monatlichen Kapitaldienst im ersten Jahr (lineare Tilgung, Zinsen auf die Anfangsschuld).", given: [["Darlehen", eur(D, 0)], ["Laufzeit", n + " Jahre"], ["Zinssatz", pz(z) + " % pro Jahr"]],
+      unit: "€", answer: m, tol: .02,
+      scheme: [["", "Tilgung im 1. Jahr", eur(t)], ["+", `Zinsen im 1. Jahr (${pz(z)} %)`, eur(zi)], ["=", "Kapitaldienst im 1. Jahr", eur(kd)], [":", "12 Monate", ""], ["=", "Kapitaldienst pro Monat", eur(m), 1]],
+      side: [`Tilgung: ${eur(D, 0)} : ${n} Jahre = ${eur(t)}`, `Zinsen: ${eur(D, 0)} × ${pz(z)} : 100 = ${eur(zi)}`, `Pro Monat: ${eur(kd)} : 12 = ${eur(m)}`]};
+  }},
+  breakeven: {name: "Gewinnschwelle", what: "Die Gewinnschwelle (Fachwort: Break-even) ist die Menge, ab der alle Kosten gedeckt sind. Darunter macht der Betrieb Verlust, darüber Gewinn.", make() {
+    const db = pick(range(10, 60, 5)), q = pick(range(100, 800, 50)), F = db * q, kv = pick(range(20, 120, 5)), p = kv + db;
+    return {task: "Ab welcher Stückzahl arbeitet der Betrieb ohne Verlust?", given: [["Fixkosten pro Jahr", eur(F, 0)], ["Verkaufspreis je Stück", eur(p, 0)], ["Variable Stückkosten", eur(kv, 0)]],
+      unit: "Stück", answer: q, tol: 0,
+      scheme: [["", "Verkaufspreis je Stück", eur(p)], ["−", "Variable Kosten je Stück", eur(kv)], ["=", "Deckungsbeitrag je Stück", eur(db)], ["", "Gewinnschwelle", num(q) + " Stück", 1]],
+      side: ["Gewinnschwelle = Fixkosten : Deckungsbeitrag je Stück", `${eur(F, 0)} : ${eur(db, 0)} = ${num(q)} Stück`]};
+  }},
+  ekquote: {name: "Eigenkapitalquote", what: "Die Eigenkapitalquote zeigt, wie viel vom Betrieb dir selbst gehört und nicht der Bank. Je höher, desto sicherer steht der Betrieb da.", make() {
+    const B = pick(range(100000, 500000, 20000)), qu = pick(range(10, 60, 5)), E = B * qu / 100;
+    return {task: "Wie hoch ist die Eigenkapitalquote?", given: [["Eigenkapital", eur(E, 0)], ["Bilanzsumme", eur(B, 0)]],
+      unit: "%", answer: qu, tol: .1,
+      scheme: [["", "Eigenkapitalquote", qu + " %", 1]],
+      side: ["Eigenkapitalquote = Eigenkapital × 100 : Bilanzsumme", `${eur(E, 0)} × 100 : ${eur(B, 0)} = ${qu} %`]};
+  }},
+  liquiditaet: {name: "Liquidität", what: "Liquidität 1. Grades zeigt, wie viel der Rechnungen, die bald fällig sind, du sofort mit dem Geld auf Konto und in der Kasse bezahlen kannst.", make() {
+    const kv = pick(range(20000, 120000, 5000)), pct = pick([20, 25, 40, 50, 60, 75, 80, 120]), fm = kv * pct / 100;
+    return {task: "Wie hoch ist die Liquidität 1. Grades?", given: [["Flüssige Mittel", eur(fm, 0)], ["Kurzfristige Verbindlichkeiten", eur(kv, 0)]],
+      unit: "%", answer: pct, tol: .1,
+      scheme: [["", "Liquidität 1. Grades", pct + " %", 1]],
+      side: ["Liquidität 1. Grades = flüssige Mittel × 100 : kurzfristige Verbindlichkeiten", `${eur(fm, 0)} × 100 : ${eur(kv, 0)} = ${pct} %`]};
+  }},
+  zuschlag: {name: "Zuschlagskalkulation", what: "Bei der Zuschlagskalkulation rechnest du auf die direkten Kosten eines Auftrags (Material und Lohn) Zuschläge für die Gemeinkosten und den Gewinn. Gemeinkosten sind Kosten, die du keinem einzelnen Auftrag zuordnen kannst, z. B. Miete, Büro, Versicherungen. So kommst du zum Angebotspreis.", make() {
+    const M = pick(range(800, 6000, 100)), mz = pick([5, 10, 15, 20]), L = pick(range(1000, 5000, 100)), lz = pick([80, 100, 120, 150]), vz = pick([5, 8, 10]), g = pick([5, 8, 10]);
+    const mgk = r2(M * mz / 100), lgk = r2(L * lz / 100), hk = r2(M + mgk + L + lgk), vv = r2(hk * vz / 100), sk = r2(hk + vv), gw = r2(sk * g / 100), net = r2(sk + gw);
+    return {task: "Berechne den Angebotspreis netto (ohne Umsatzsteuer).", given: [["Materialkosten", eur(M, 0)], ["Materialgemeinkosten-Zuschlag", mz + " %"], ["Lohnkosten für den Auftrag", eur(L, 0)], ["Lohngemeinkosten-Zuschlag", lz + " %"], ["Verwaltungs- und Vertriebszuschlag", vz + " %"], ["Gewinnzuschlag", g + " %"]],
+      unit: "€", answer: net, tol: .05,
+      scheme: [["", "Materialkosten", eur(M)], ["+", `Materialgemeinkosten ${mz} %`, eur(mgk)], ["+", "Lohnkosten", eur(L)], ["+", `Lohngemeinkosten ${lz} %`, eur(lgk)], ["=", "Herstellkosten", eur(hk)],
+        ["+", `Verwaltung und Vertrieb ${vz} %`, eur(vv)], ["=", "Selbstkosten", eur(sk)], ["+", `Gewinn ${g} %`, eur(gw)], ["=", "Angebotspreis netto", eur(net), 1]],
+      side: [`Materialgemeinkosten: ${eur(M)} × ${mz} : 100 = ${eur(mgk)}`, `Lohngemeinkosten: ${eur(L)} × ${lz} : 100 = ${eur(lgk)}`, `Verwaltung und Vertrieb: ${eur(hk)} × ${vz} : 100 = ${eur(vv)}`, `Gewinn: ${eur(sk)} × ${g} : 100 = ${eur(gw)}`]};
+  }},
+  deckungsbeitrag: {name: "Deckungsbeitrag", what: "Der Deckungsbeitrag ist das, was von einem Auftrag übrig bleibt, wenn du die Kosten abziehst, die nur wegen dieses Auftrags anfallen (Material, Fremdleistungen, Lohn für den Auftrag). Mit diesem Betrag bezahlst du die festen Kosten wie Miete und Versicherungen. Ist er positiv, lohnt sich der Auftrag zumindest kurzfristig.", make() {
+    const P = pick(range(5000, 30000, 500)), M = Math.round(P * pick([.2, .25, .3, .35]) / 50) * 50, F = Math.round(P * pick([0, .05, .1, .15]) / 50) * 50, L = Math.round(P * pick([.2, .25, .3]) / 50) * 50;
+    const db = P - M - F - L, q = Math.round(db / P * 1000) / 10;
+    return {task: "Wie hoch ist der Deckungsbeitrag dieses Auftrags?", given: [["Auftragspreis netto", eur(P, 0)], ["Material", eur(M, 0)], ["Fremdleistungen (Subunternehmer)", eur(F, 0)], ["Lohnkosten für den Auftrag", eur(L, 0)]],
+      unit: "€", answer: db, tol: .02,
+      scheme: [["", "Auftragspreis netto", eur(P)], ["−", "Material", eur(M)], ["−", "Fremdleistungen", eur(F)], ["−", "Lohnkosten für den Auftrag", eur(L)], ["=", "Deckungsbeitrag", eur(db), 1]],
+      side: [`Anteil am Preis: ${eur(db, 0)} × 100 : ${eur(P, 0)} = ${num(q, 1)} %`, "Davon werden die Fixkosten bezahlt, der Rest ist Gewinn."]};
+  }},
+  abschreibung: {name: "Abschreibung", what: "Die Abschreibung verteilt den Kaufpreis einer Maschine oder eines Fahrzeugs auf die Jahre, in denen du sie nutzt. Bei der linearen Abschreibung ist es jedes Jahr gleich viel. Im Jahr des Kaufs zählen nur die Monate ab dem Kaufmonat.", make() {
+    const things = ["eine Maschine", "einen Transporter", "eine Werkbank mit Absaugung", "ein Messgerät", "einen Anhänger"];
+    const AK = pick(range(6000, 60000, 1000)), n = pick([3, 5, 6, 8, 10]), mon = pick(range(1, 12, 1)), months = 13 - mon;
+    const year = r2(AK / n), first = r2(year * months / 12);
+    const mName = new Date(2026, mon - 1, 1).toLocaleString("de-DE", {month: "long"});
+    return {task: `Der Betrieb kauft ${pick(things)}. Wie hoch ist die lineare Abschreibung im Jahr des Kaufs?`, given: [["Anschaffungskosten netto", eur(AK, 0)], ["Nutzungsdauer", n + " Jahre"], ["Gekauft im", mName]],
+      unit: "€", answer: first, tol: .02,
+      scheme: [["", "Anschaffungskosten", eur(AK)], ["−", `Abschreibung im Kaufjahr (${months} Monate)`, eur(first), 1], ["=", "Restbuchwert am Jahresende", eur(r2(AK - first))]],
+      side: [`Abschreibung pro Jahr: ${eur(AK, 0)} : ${n} Jahre = ${eur(year)}`, `Monate im Kaufjahr: ${mName} bis Dezember = ${months}`, `Abschreibung im Kaufjahr: ${eur(year)} × ${months} : 12 = ${eur(first)}`, "Grundlage: EStG § 7 Abs. 1 (im Jahr der Anschaffung nur anteilig nach Monaten)"]};
+  }}
+};
+function schemeHtml(c) {
+  return `<table class="scheme"><tbody>${c.scheme.map(([op, l, val, ans]) => `<tr class="${op === "=" ? "s-sum" : ""} ${ans ? "s-ans" : ""}">
+      <td class="op">${op}</td><td>${esc(l)}</td><td class="val">${val ? `<span>${esc(val)}</span>` : ""}</td></tr>`).join("")}</tbody></table>
+    ${c.side.length ? `<div class="side"><b>Nebenrechnungen</b>${c.side.map(s => `<div>${esc(s)}</div>`).join("")}</div>` : ""}`;
+}
+S.calc = S.calc || {};   // Rechenart -> {seen, right}
+function suggestCalc() {
+  const keys = Object.keys(GEN);
+  const fresh = keys.find(k => !(S.calc[k] && S.calc[k].seen));
+  if (fresh) return {type: fresh, why: "Diese Rechenart hast du noch nicht geübt."};
+  const rate = k => S.calc[k].right / S.calc[k].seen;
+  const k = keys.slice().sort((a, b) => rate(a) - rate(b) || S.calc[a].seen - S.calc[b].seen)[0], c = S.calc[k];
+  return {type: k, why: rate(k) < 1 ? `Hier hattest du die meisten Fehler: ${c.right} von ${c.seen} richtig.` : "Du hast alles richtig. Übe weiter, damit es sitzt."};
+}
+let calcType = suggestCalc().type, calc = GEN[calcType].make(), calcResult = null;
+function renderRechnen() {
+  const v = $("#v-rechnen");
+  v.innerHTML = `<h2 class="sr view-h" tabindex="-1">Rechnen</h2>
+  <div class="card">
+    ${(() => { const sg = suggestCalc(); return `<p class="tip"><b>Tipp: ${esc(GEN[sg.type].name)}.</b> ${esc(sg.why)}</p>`; })()}
+    <p class="small muted">Wähle, was du üben willst:</p>
+    <div class="seg" role="group" aria-label="Rechenart">${Object.entries(GEN).map(([k, g]) => { const c = S.calc[k]; return `<button data-c="${k}" aria-pressed="${calcType === k}">${g.name}${c && c.seen ? ` <span class="mini">${c.right}/${c.seen}</span>` : ""}</button>`; }).join("")}</div>
+    <p class="term"><b>Was heißt das?</b> ${esc(GEN[calcType].what)}</p>
+    <h3>${esc(calc.task)}</h3>
+    <div class="calc-given">${calc.given.map(([a, b]) => `<span>${esc(a)}</span><span>${esc(b)}</span>`).join("")}</div>
+    <form id="calc-form" class="answer" autocomplete="off">
+      <input type="text" id="calc-in" inputmode="decimal" placeholder="Dein Ergebnis" aria-label="Dein Ergebnis" ${calcResult ? "disabled" : ""}>
+      <span class="unit">${calc.unit}</span>
+      ${calcResult ? "" : '<button class="btn accent" type="submit">Prüfen</button>'}
+    </form>
+    ${calcResult ? `
+      <div class="verdict ${calcResult.ok ? "ok" : "no"}">${calcResult.ok ? "Richtig! So wird gerechnet:" : "Nicht ganz. Deine Eingabe: " + esc(calcResult.raw) + ". Richtig ist " + (calc.unit === "€" ? eur(calc.answer) : num(calc.answer) + " " + calc.unit) + "."}</div>
+      ${schemeHtml(calc)}
+      <button class="btn" id="calc-next">Neue Zahlen</button>` : `<p class="small muted">Gib nur die Zahl ein, zum Beispiel 49,98. Bei Euro auf zwei Stellen nach dem Komma runden.</p>`}
+  </div>
+  <p class="small muted">Mit „Neue Zahlen“ bekommst du jedes Mal eine neue Aufgabe. So kannst du so oft üben, wie du willst.</p>`;
+  v.querySelectorAll("[data-c]").forEach(b => b.addEventListener("click", () => { calcType = b.dataset.c; calc = GEN[calcType].make(); calcResult = null; renderRechnen(); }));
+  const f = $("#calc-form");
+  f.addEventListener("submit", e => {
+    e.preventDefault();
+    const raw = $("#calc-in").value, x = parseNum(raw);
+    if (isNaN(x)) { $("#calc-in").setCustomValidity("Bitte eine Zahl eingeben, zum Beispiel 49,98"); $("#calc-in").reportValidity(); return; }
+    calcResult = {raw, ok: Math.abs(x - calc.answer) <= calc.tol + 1e-9};
+    const c = S.calc[calcType] || (S.calc[calcType] = {seen: 0, right: 0});
+    c.seen++; if (calcResult.ok) c.right++;
+    const dl = dayLog(); dl.calc++; if (calcResult.ok) dl.cr++; save(); renderRechnen();
+  });
+  $("#calc-in").addEventListener("input", e => e.target.setCustomValidity(""));
+  const n = $("#calc-next"); if (n) { n.addEventListener("click", () => { calc = GEN[calcType].make(); calcResult = null; renderRechnen(); $("#calc-in").focus(); }); n.focus(); }
+}
+
+/* ---------- Ansicht: Fälle ---------- */
+let caseId = "F3";
+S.cases = S.cases || {};   // "F3-0" -> {nums:{i:wert}, auto:{"g-i":true}, manual:{"g-i":bool}, done:true}
+
+/* Stichwörter: Was die App in der Textantwort automatisch erkennt (Kleinbuchstaben, ä = ae usw.) */
+const KW = {
+ "F3-3|0-0": "fehl|unterdeck|minus|negativ|zahlungsunf|illiquid|engpass|nicht (mehr )?zahl",
+ "F3-3|1-0": "kontokorrent|dispo|kredit|ueberzieh", "F3-3|1-1": "abschlag|anzahlung|vorauszahl", "F3-3|1-2": "zahlungsziel|lieferant",
+ "F3-3|1-3": "mahn|forderung|inkasso", "F3-3|1-4": "verschieb|aufschieb|investition|anschaffung",
+ "F3-4|0-0": "handwerksrolle|handwerkskammer|\\bhwk\\b", "F3-4|0-1": "gewerbe", "F3-4|0-2": "berufsgenossenschaft|unfallversicherung|\\bbg\\b",
+ "F3-4|0-3": "finanzamt|steuer", "F3-4|0-4": "handelsregister", "F3-4|0-5": "sozialversicherung|krankenkasse|rentenversicherung|betriebsnummer|arbeitsagentur",
+ "F3-4|0-6": "haftpflicht|betriebsversicherung",
+ "F3-5|0-0": "gmbh", "F3-5|0-1": "25000|25 tausend|25tsd", "F3-5|0-2": "\\bug\\b|unternehmergesellschaft|mini.?gmbh", "F3-5|0-3": "\\b1 ?(€|euro)|ein euro|ab 1\\b",
+ "F3-5|1-0": "aufwand|kosten|buerokrat|notar", "F3-5|1-1": "bilanz|veroeffentlich|offenleg|jahresabschluss", "F3-5|1-2": "kapitalerhalt|kapitalregel|kapitalaufbring",
+ "F3-5|1-3": "ruecklage", "F3-5|1-4": "buergschaft|persoenlich haft|privat haft",
+ "F4-0|0-0": "persoenlich", "F4-0|0-1": "fachlich", "F4-0|0-2": "ausbildungsstaett|einrichtung|geeignete?r? (betrieb|staette|werkstatt|raeum)|werkstatt|ausstattung",
+ "F4-0|0-3": "verhaeltnis|fachkraeft|anzahl der (azubis|auszubildenden|lehrlinge)|genug (gesellen|mitarbeiter|personal|beschaeftigte)", "F4-0|1-0": "paedagog|teil iv|teil 4|aevo|ausbildereignung|\\bada\\b",
+ "F4-1|0-0": "bewerbungsunterlag|unterlagen|lebenslauf|zeugnis", "F4-1|0-1": "vorstellungsgespraech|gespraech|interview", "F4-1|0-2": "probearbeit|praktikum|schnupper",
+ "F4-1|0-3": "test", "F4-1|0-4": "referenz", "F4-1|1-0": "benachteilig|diskrimin|herkunft|geschlecht|religion|behinderung",
+ "F4-1|1-1": "familienplan|schwanger|kinderwunsch|heirat", "F4-1|1-2": "dokument|schriftlich|festhalt|begruend",
+ "F4-2|0-0": "gliederung|art der ausbildung|ausbildungsplan|ziel", "F4-2|0-1": "beginn|dauer der ausbildung|ausbildungsdauer", "F4-2|0-2": "ausbildungsstaett|ausbildungsort",
+ "F4-2|0-3": "taeglich|arbeitszeit|ausbildungszeit", "F4-2|0-4": "probezeit", "F4-2|0-5": "verguetung|gehalt|lohn", "F4-2|0-6": "urlaub",
+ "F4-2|0-7": "kuendig", "F4-2|0-8": "tarif|betriebsvereinbarung",
+ "F4-3|0-0": "lernziel|kann .{0,60}(so|dass)|soll .{0,60}koennen", "F4-3|1-0": "vorbereit", "F4-3|1-1": "vormach|vorzeig|zeigen", "F4-3|1-2": "nachmach",
+ "F4-3|1-3": "selbststaendig|ueben|uebung",
+ "F4-4|0-0": "gespraech|unter vier augen|reden", "F4-4|0-1": "ursach|warum|hintergr", "F4-4|0-2": "regel|erwart|vereinbar", "F4-4|0-3": "dokument|notier|protokoll|schriftlich fest",
+ "F4-4|0-4": "eltern|erziehungsberecht|gesetzliche vertreter|vater|mutter", "F4-4|0-5": "abmahn",
+ "F4-4|1-0": "ohne frist|fristlos|jederzeit|ohne (angabe von )?gr", "F4-4|1-1": "schriftlich",
+ "F4-5|0-0": "halo|ueberstrahl|heiligenschein", "F4-5|0-1": "mitte", "F4-5|0-2": "milde|streng", "F4-5|0-3": "reihenfolge|recency|letzte eindr|juengst",
+ "F5-3|0-0": "allein entscheid|selbst entscheid|eigene[rn]? chef|unabhaengig|schnell entscheid", "F5-3|0-1": "einfach|guenstig|wenig formal|schnell gegruendet",
+ "F5-3|0-2": "kein (mindest|stamm|start)kapital|ohne (mindest|stamm)?kapital", "F5-3|0-3": "gewinn",
+ "F5-3|1-0": "haft|privatvermoegen", "F5-3|1-1": "kapital|kredit|finanzier", "F5-3|1-2": "risiko|krank|vertret|allein verantwort",
+ "F5-4|0-0": "haftpflicht", "F5-4|0-1": "berufsgenossenschaft|unfallversicherung|\\bbg\\b", "F5-4|0-2": "krankenversicherung|krankenkasse|krankenvers",
+ "F5-4|0-3": "rente|altersvorsorge", "F5-4|0-4": "inhalt|werkzeug|inventar|einbruch|diebstahl|feuer|elektronikvers", "F5-4|0-5": "betriebsunterbrech|ausfallvers",
+ "F5-4|0-6": "rechtsschutz",
+ "F5-5|0-0": "google|maps|unternehmensprofil", "F5-5|0-1": "webseite|website|homepage|internetseite", "F5-5|0-2": "fahrzeug|auto|beschrift",
+ "F5-5|0-3": "empfehl|mundpropaganda|bewertung", "F5-5|0-4": "social media|instagram|facebook|tiktok", "F5-5|0-5": "kooperation|zusammenarbeit|bautraeger|architekt|netzwerk|andere(n)? handwerk",
+ "F5-5|0-6": "flyer|zeitung|anzeige|plakat|werbung",
+ "F6-0|0-0": "sorgfaelt|gewissenhaft", "F6-0|0-1": "berufsschul|unterricht|pruefung", "F6-0|0-2": "weisung", "F6-0|0-3": "ordnung",
+ "F6-0|0-4": "werkzeug|maschine|pfleglich", "F6-0|0-5": "geheim|stillschweig|verschwieg", "F6-0|0-6": "berichtsheft|ausbildungsnachweis",
+ "F6-1|0-0": "vermittel|beibring|ausbilden", "F6-1|0-1": "ausbildungsmittel|werkzeug|kostenlos", "F6-1|0-2": "berufsschul|freistell",
+ "F6-1|0-3": "berichtsheft|ausbildungsnachweis|durchseh|kontrollier", "F6-1|0-4": "charakter|foerder", "F6-1|0-5": "ausbildungszweck|nur aufgaben|keine (fremden|ausbildungsfremden)",
+ "F6-1|0-6": "verguetung|gehalt|lohn|bezahl", "F6-1|0-7": "zeugnis",
+ "F6-4|0-0": "vorbereit|fakten|daten sammeln", "F6-4|0-1": "ruhig|ungestoert|unter vier augen|stoerung", "F6-4|0-2": "positiv|lob|wertschaetz|freundlich",
+ "F6-4|0-3": "anlass|konkret|sachlich|beispiel", "F6-4|0-4": "ich.?botschaft|ich.?form", "F6-4|0-5": "zuhoer|seine sicht|meinung|stellung nehmen|erzaehlen lassen",
+ "F6-4|0-6": "ursach|warum|gruende", "F6-4|0-7": "ziel|vereinbar|massnahm|loesung", "F6-4|0-8": "schriftlich|protokoll|festhalt|notier",
+ "F6-4|0-9": "folgetermin|nachgespraech|ueberpruef|wiedertreffen|erneut treffen",
+ "F6-5|0-0": "abmahn", "F6-5|0-1": "datum|genau|konkret|beschreib|fehlverhalt", "F6-5|0-2": "aender|aufforder|kuenftig|in zukunft",
+ "F6-5|0-3": "kuendig", "F6-5|0-4": "eltern|gesetzliche vertreter|erziehungsberecht|minderjaehr",
+ "F6-6|0-0": "lernzeit|zeit zum lernen", "F6-6|0-1": "\\basa\\b|assistierte|nachhilfe|\\babh\\b|foerderunterricht", "F6-6|0-2": "berufsschul|lehrer",
+ "F6-6|0-3": "lernplan|zeitplan|wochenplan", "F6-6|0-4": "pruefungsaufgab|probepruef|alte pruefung|uebungsaufgab", "F6-6|0-5": "lerngruppe|gruppe|pate|geselle",
+ "F6-6|0-6": "berichtsheft|ausbildungsnachweis",
+ "F4-5|1-0": "bogen|einzeln|kriterien", "F4-5|1-1": "skala|ganze bandbreite|begruend", "F4-5|1-2": "massstab|kolleg|vorher festleg", "F4-5|1-3": "notier|laufend|tagebuch|beobacht"
+};
+function norm(s) {
+  return String(s || "").toLowerCase().replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss")
+    .replace(/(\d)[.\s](?=\d{3}\b)/g, "$1");
+}
+function detect(k, text) {
+  const n = norm(text), out = {};
+  if (!n.trim()) return out;
+  Object.keys(KW).forEach(key => { const [tk, item] = key.split("|"); if (tk === k) { try { if (new RegExp(KW[key], "i").test(n)) out[item] = true; } catch (e) {} } });
+  return out;
+}
+function isTicked(r, key) { return r.manual && key in r.manual ? r.manual[key] : !!(r.auto || {})[key]; }
+function numOk(n, val) { const x = parseNum(val); return !isNaN(x) && Math.abs(x - n.a) <= (n.tol ?? .021); }
+function taskScore(t, r) {
+  let pts = 0;
+  (t.nums || []).forEach((n, i) => { if (numOk(n, (r.nums || {})[i])) pts += n.p; });
+  (t.groups || []).forEach((g, gi) => {
+    let gp = 0; g.items.forEach((it, ii) => { if (isTicked(r, gi + "-" + ii)) gp += it[1]; });
+    pts += Math.min(gp, g.max);
+  });
+  return Math.min(pts, t.p);
+}
+function caseScore(c) {   // nur geprüfte Aufgaben
+  let got = 0, max = 0, done = 0;
+  c.tasks.forEach((t, i) => { const r = S.cases[c.id + "-" + i]; if (r && r.done) { got += taskScore(t, r); max += t.p; done++; } });
+  return {got, max, done, total: c.tasks.length, all: c.tasks.reduce((n, t) => n + t.p, 0)};
+}
+const caseSeg = () => `<div class="seg" role="group" aria-label="Fallaufgabe">${CASES.map(x => `<button data-case="${x.id}" aria-pressed="${x.id === caseId}">${x.teil} · ${esc(x.short)}</button>`).join("")}<button data-case="FG" aria-pressed="${caseId === "FG"}">Teil IV · Fachgespräch</button></div>`;
+function renderFaelle() {
+  if (caseId === "FG") return renderCoach();
+  const c = CASES.find(x => x.id === caseId) || CASES[0]; caseId = c.id;
+  const sc = caseScore(c);
+  const v = $("#v-faelle");
+  v.innerHTML = `<h2 class="sr view-h" tabindex="-1">Fälle</h2>
+  <div class="card">
+    ${caseSeg()}
+    <h2>${esc(c.title)}</h2>
+    ${(S.best || {})[c.id] != null ? `<p class="small muted">Dein bestes Ergebnis bei diesem Fall: <b>${S.best[c.id]} %</b></p>` : ""}
+    <p class="tip"><b>So geht’s:</b> Lies den Fall, beantworte eine Aufgabe und tippe auf <b>„Antwort prüfen“</b>. Die App prüft deine Zahlen und erkennt Stichworte in deinem Text.</p>
+    <div class="case-text">${c.intro.map(p => `<p>${esc(p)}</p>`).join("")}</div>
+    ${c.table ? `<div class="tbl"><table>${c.table.map(([a, b]) => `<tr><td>${esc(a)}</td><td>${esc(b)}</td></tr>`).join("")}</table></div>` : ""}
+    ${c.tasks.map((t, i) => renderTask(c, t, i)).join("")}
+    <div class="sum">
+      <span class="total" id="case-total">${sc.got} von ${sc.max} Punkten</span>
+      <span class="small muted" id="case-note">${caseNote(sc)}</span>
+    </div>
+    ${confirmRestart === c.id ? `
+      <div class="confirm">
+        <p><b>Wirklich neu starten?</b> Alle deine Antworten zu diesem Fall werden gelöscht.${c.varies ? " Du bekommst neue Zahlen." : ""} Dein bestes Ergebnis bleibt gespeichert.</p>
+        <div class="row"><button class="btn accent" id="restart-yes">Ja, neu starten</button><button class="btn ghost" id="restart-no">Abbrechen</button></div>
+      </div>` : `
+      <button class="btn ghost" id="restart">Fall neu starten${c.varies ? " (mit neuen Zahlen)" : ""}</button>`}
+  </div>`;
+  const rs = $("#restart"); if (rs) rs.addEventListener("click", () => { confirmRestart = c.id; renderFaelle(); $("#restart-yes").focus(); });
+  const rn = $("#restart-no"); if (rn) rn.addEventListener("click", () => { confirmRestart = null; renderFaelle(); });
+  const ry = $("#restart-yes"); if (ry) ry.addEventListener("click", () => restartCase(c));
+  v.querySelectorAll("[data-case]").forEach(b => b.addEventListener("click", () => { caseId = b.dataset.case; confirmRestart = null; renderFaelle(); window.scrollTo(0, 0); }));
+  v.querySelectorAll("[data-check]").forEach(b => b.addEventListener("click", () => {
+    const k = b.dataset.check, r = S.cases[k] || (S.cases[k] = {});
+    r.nums = {}; v.querySelectorAll(`[data-num^="${k}|"]`).forEach(inp => r.nums[inp.dataset.num.split("|")[1]] = inp.value);
+    const ta = document.getElementById("ans-" + k);
+    if (ta) S.answers[k] = ta.value;
+    r.auto = detect(k, S.answers[k]);
+    r.manual = r.manual || {};
+    r.done = true; dayLog().fall = 1; save();
+    const y = b.getBoundingClientRect().top;          // Ergebnis dort zeigen, wo der Knopf war
+    renderFaelle();
+    const res = document.getElementById("res-" + k);
+    if (res) window.scrollBy(0, res.getBoundingClientRect().top - Math.max(80, y));
+  }));
+  v.querySelectorAll("[data-tick]").forEach(cb => cb.addEventListener("change", () => {
+    const [k, key] = cb.dataset.tick.split("|"), r = S.cases[k];
+    r.manual = r.manual || {}; r.manual[key] = cb.checked; save();
+    const t = c.tasks[+k.split("-")[1]], tot = caseScore(c);
+    document.getElementById("pts-" + k).textContent = taskScore(t, r) + " von " + t.p + " Punkten";
+    document.getElementById("case-total").textContent = tot.got + " von " + tot.max + " Punkten";
+    document.getElementById("case-note").innerHTML = caseNote(tot);
+  }));
+  v.querySelectorAll("[data-sign]").forEach(b => b.addEventListener("click", () => {
+    const inp = document.getElementById(b.dataset.sign), val = inp.value.trim();
+    inp.value = /^[-−]/.test(val) ? val.replace(/^[-−]\s*/, "") : "-" + val;
+    inp.dispatchEvent(new Event("input"));
+    inp.focus();
+  }));
+  v.querySelectorAll("[data-num]").forEach(inp => inp.addEventListener("input", () => {   // Zahlen sofort merken, nicht erst beim Prüfen
+    const [k, ni] = inp.dataset.num.split("|"), r = S.cases[k] || (S.cases[k] = {});
+    (r.nums = r.nums || {})[ni] = inp.value; save();
+  }));
+  v.querySelectorAll("textarea").forEach(t => t.addEventListener("input", () => { S.answers[t.dataset.k] = t.value; save(); }));
+}
+let confirmRestart = null;
+
+/* ---------- Fit fürs Fachgespräch (Teil IV, praktische Prüfung) ----------
+   Zwei Teile: eine Unterweisung Schritt für Schritt planen (mit Spickzettel) und typische Prüferfragen üben.
+   Inhalte sind Entwürfe und stehen zur Prüfung in Lektorat.md. */
+const COACH_Q = [
+ {q: "Warum haben Sie für diese Unterweisung die Vier-Stufen-Methode gewählt?", a: ["Sie passt gut zu praktischen Handgriffen: Der Azubi sieht zu, macht nach und übt.", "Ich sehe sofort, ob er es kann, und kann gleich korrigieren.", "Für reines Wissen würde ich eher ein Lehrgespräch wählen, für selbstständiges Arbeiten die Leittextmethode."]},
+ {q: "Wie überprüfen Sie, ob der Azubi das Lernziel erreicht hat?", a: ["Er führt die Tätigkeit allein aus, und ich vergleiche das Ergebnis mit dem Lernziel (Maß, Sauberkeit, Zeit).", "Ich lasse ihn die Arbeitsschritte erklären und frage nach dem Warum.", "Danach gebe ich ihm eine Rückmeldung und lasse ihn bei Bedarf noch einmal üben."]},
+ {q: "Was ist ein Lernziel, und wie formulieren Sie es?", a: ["Es beschreibt, was der Azubi danach kann.", "Mit einem Verb, das man beobachten kann (z. B. „anschließen“, „verspachteln“) statt „verstehen“ oder „kennenlernen“.", "Dazu die Bedingungen (Werkzeug, Hilfsmittel) und woran man den Erfolg misst (z. B. Toleranz, Zeit)."]},
+ {q: "Welche Lernzielbereiche gibt es?", a: ["Kognitiv: Wissen und Denken, z. B. Arbeitsschritte erklären.", "Psychomotorisch: Handgriffe und Fertigkeiten.", "Affektiv: Einstellungen, z. B. Sorgfalt oder Sicherheitsbewusstsein.", "Eine gute Unterweisung spricht mehrere Bereiche an."]},
+ {q: "Wie passt Ihre Unterweisung in die Ausbildung?", a: ["Der Inhalt steht im Ausbildungsrahmenplan der Ausbildungsordnung (BBiG § 5).", "Daraus wird der betriebliche Ausbildungsplan erstellt.", "Ich nenne das Ausbildungsjahr und, wenn möglich, das passende Lernfeld der Berufsschule."]},
+ {q: "Wie motivieren Sie den Azubi?", a: ["Ich zeige, wofür er das in der Praxis braucht.", "Ich knüpfe an das an, was er schon kann.", "Er darf selbst machen, ich lobe Fortschritte und übertrage Verantwortung."]},
+ {q: "Was tun Sie, wenn der Azubi einen Fehler macht?", a: ["Ruhig bleiben und ihn nicht vor anderen bloßstellen.", "Ihn den Fehler möglichst selbst finden lassen und die Ursache klären.", "Den richtigen Ablauf noch einmal zeigen und ihn wiederholen lassen. Fehler sind eine Lerngelegenheit."]},
+ {q: "Wie berücksichtigen Sie die Arbeitssicherheit?", a: ["Gefahren und Schutzausrüstung erkläre ich gleich zu Beginn.", "Ich halte mich an die Unfallverhütungsvorschriften der Berufsgenossenschaft.", "Jugendliche muss ich vor Beginn der Beschäftigung und mindestens halbjährlich unterweisen (JArbSchG § 29)."]},
+ {q: "Was machen Sie, wenn der Azubi es nach der Unterweisung noch nicht kann?", a: ["Ursache klären: zu schnell, zu viel auf einmal, fehlt Vorwissen?", "In kleinere Schritte teilen und mehr Übungszeit geben.", "Eine andere Methode oder andere Hilfsmittel nutzen, einen Gesellen als Paten einsetzen."]},
+ {q: "Wie gehen Sie mit unterschiedlich starken Azubis um?", a: ["Vorwissen vorher erfragen.", "Tempo und Schwierigkeit anpassen.", "Stärkere bekommen Zusatzaufgaben oder erklären anderen, Schwächere bekommen mehr Übung und Hilfen (z. B. Assistierte Ausbildung)."]},
+ {q: "Welche Hilfsmittel und Medien haben Sie eingesetzt, und warum?", a: ["Originalwerkzeug und -material, damit es wie im Alltag ist.", "Ein fertiges Muster zeigt das Ziel, eine Skizze oder ein Arbeitsblatt hilft beim Merken.", "So spreche ich mehrere Sinne an."]},
+ {q: "Wie geben Sie dem Azubi Rückmeldung?", a: ["Zeitnah und konkret.", "Erst das Gute, dann was besser werden soll.", "Sachlich zur Arbeit, nicht zur Person, mit Ich-Botschaften. Gemeinsam die nächsten Schritte vereinbaren."]}
+];
+const PLAN_FIELDS = [
+ ["thema", "Was zeigst du?", "z. B. Eine Steckdose fachgerecht anschließen", "text"],
+ ["azubi", "Für wen?", "z. B. Azubi im 1. Ausbildungsjahr, 16 Jahre, kennt schon die Werkzeuge", "text"],
+ ["ziel", "Lernziel: Was kann der Azubi danach, und woran erkennst du das?", "z. B. Der Azubi schließt eine Steckdose ohne Hilfe an. Alle Adern sitzen fest, die Prüfung mit dem Messgerät ist in Ordnung.", "area"],
+ ["s1", "Stufe 1: Vorbereiten", "Ziel nennen, Vorwissen fragen, Material bereitlegen, Sicherheit erklären", "area"],
+ ["s2", "Stufe 2: Vormachen und erklären", "Schritt für Schritt zeigen, wichtige Stellen betonen (Was? Wie? Warum?)", "area"],
+ ["s3", "Stufe 3: Nachmachen und erklären lassen", "Azubi macht es selbst und erklärt dabei, du korrigierst und lobst", "area"],
+ ["s4", "Stufe 4: Üben und abschließen", "Azubi übt allein, du kontrollierst das Ergebnis und gibst Rückmeldung", "area"],
+ ["sicher", "Sicherheit: Welche Gefahren und welche Schutzausrüstung sprichst du an?", "z. B. Spannungsfreiheit prüfen, gegen Wiedereinschalten sichern", "text"],
+ ["material", "Material und Hilfsmittel", "z. B. Steckdose, Kabel, Abisolierzange, Prüfgerät, fertiges Muster", "text"],
+ ["zeit", "Geplante Zeit in Minuten", "z. B. 15", "num"]
+];
+let coachTab = "plan", coachPos = 0, coachShow = false, coachCheat = false;
+S.coach = S.coach || {};
+function planChecks(p) {
+  const f = k => (p[k] || "").trim(), z = parseNum(f("zeit"));
+  return [
+    [!!f("thema"), "Thema steht fest"],
+    [f("ziel").length >= 20 && !/\b(verstehen|versteht|kennenlernen|kennt|wissen|weiß)\b/i.test(f("ziel")), "Lernziel mit beobachtbarem Verb (nicht „verstehen“ oder „kennen“)"],
+    [["s1", "s2", "s3", "s4"].every(k => f(k)), "Alle vier Stufen geplant"],
+    [!!f("sicher"), "Sicherheit eingeplant"],
+    [!!f("material"), "Material und Hilfsmittel aufgeschrieben"],
+    [z > 0 && z <= 15, "Zeit höchstens 15 Minuten"]
+  ];
+}
+function renderCoach() {
+  const v = $("#v-faelle"), p = S.coach.plan || (S.coach.plan = {}), rated = S.coach.q || (S.coach.q = {});
+  const tabs = `<div class="seg" role="group" aria-label="Fachgespräch">
+      <button data-ct="plan" aria-pressed="${coachTab === "plan"}">Unterweisung planen</button>
+      <button data-ct="fragen" aria-pressed="${coachTab === "fragen"}">Prüferfragen üben</button></div>`;
+  let body;
+  if (coachTab === "plan" && coachCheat) {
+    body = `<div class="cheat" id="cheat">
+      <h3>${esc(p.thema || "Meine Unterweisung")}</h3>
+      ${PLAN_FIELDS.filter(([k]) => k !== "thema" && (p[k] || "").trim()).map(([k, l]) => `<p><b>${k === "zeit" ? "Zeit" : esc(l.split(":")[0].replace("?", ""))}:</b> ${esc(p[k])}${k === "zeit" ? " Minuten" : ""}</p>`).join("")}
+    </div>
+    <p class="small muted">Stichwortnotizen, die du selbst geschrieben hast, darfst du in der Regel mitnehmen. Frag sicherheitshalber bei deiner Handwerkskammer nach.</p>
+    <div class="row"><button class="btn accent" id="cheat-print" style="flex:1 1 160px">Drucken</button><button class="btn ghost" id="cheat-back" style="flex:1 1 160px">Zurück zum Plan</button></div>`;
+  } else if (coachTab === "plan") {
+    const done = planChecks(p).filter(c => c[0]).length;
+    body = `<p>Plane deine Unterweisung Schritt für Schritt. Alles wird sofort gespeichert. Am Ende bekommst du einen Spickzettel.</p>
+    ${PLAN_FIELDS.map(([k, l, ph, t]) => `<div style="display:flex;flex-direction:column;gap:6px">
+      <label for="pl-${k}">${esc(l)}</label>
+      ${t === "area" ? `<textarea id="pl-${k}" data-plan="${k}" placeholder="${esc(ph)}">${esc(p[k] || "")}</textarea>`
+        : `<input type="text" id="pl-${k}" data-plan="${k}" ${t === "num" ? 'inputmode="numeric"' : ""} placeholder="${esc(ph)}" value="${esc(p[k] || "")}">`}</div>`).join("")}
+    <fieldset class="checks"><legend>Hast du an alles gedacht? <span id="plan-count">${done} von 6</span></legend><div id="plan-check">${planCheckHtml(p)}</div></fieldset>
+    <p class="small muted">In der praktischen Prüfung (Teil IV) dauert die Präsentation oder Durchführung laut Ausbilder-Eignungsverordnung höchstens 15 Minuten, danach folgt das Fachgespräch.</p>
+    <button class="btn accent" id="cheat-open">Spickzettel ansehen</button>`;
+  } else {
+    const i = Math.min(coachPos, COACH_Q.length - 1), cq = COACH_Q[i], r = rated[i];
+    const good = Object.values(rated).filter(x => x === "gut").length;
+    body = `<div class="row" style="justify-content:space-between"><b>Frage ${i + 1} von ${COACH_Q.length}</b><span class="small muted">${good} sicher beantwortet</span></div>
+    <div class="qtools">${voiceTools()}</div>
+    <p class="small muted">So fragt dich der Prüfer nach deiner Unterweisung. Überleg dir eine Antwort oder sag sie laut. Dann deck die Musterantwort auf.</p>
+    <div class="qtext" id="qtext" tabindex="-1">${esc(cq.q)}</div>
+    ${coachShow ? `<div class="explain" role="status"><b>Musterantwort (Stichpunkte, Entwurf):</b><ul class="howto">${cq.a.map(x => `<li>${esc(x)}</li>`).join("")}</ul></div>
+      <p><b>Wie gut konntest du das?</b></p>
+      <div class="choice">${[["gut", "Konnte ich"], ["teils", "Teilweise"], ["nein", "Noch nicht"]].map(([k, t]) => `<button class="btn ${r === k ? "accent" : "ghost"}" data-rate="${k}">${t}</button>`).join("")}</div>`
+      : `<button class="btn accent" id="coach-show">Musterantwort zeigen</button>`}
+    <div class="row"><button class="btn ghost" id="coach-prev" ${i ? "" : "disabled"} style="flex:1">Zurück</button><button class="btn ghost" id="coach-next" style="flex:1">${i + 1 < COACH_Q.length ? "Überspringen" : "Von vorn"}</button></div>`;
+  }
+  v.innerHTML = `<h2 class="sr view-h" tabindex="-1">Fälle</h2>
+  <div class="card">
+    ${caseSeg()}
+    <h2>Fit fürs Fachgespräch</h2>
+    <p class="small muted">Für die praktische Prüfung in Teil IV. Entwurf, noch nicht vom Dozenten geprüft.</p>
+    ${tabs}
+    ${body}
+  </div>`;
+  v.querySelectorAll("[data-case]").forEach(b => b.addEventListener("click", () => { caseId = b.dataset.case; confirmRestart = null; stopSpeak(); renderFaelle(); window.scrollTo(0, 0); }));
+  v.querySelectorAll("[data-ct]").forEach(b => b.addEventListener("click", () => { coachTab = b.dataset.ct; coachShow = false; coachCheat = false; stopSpeak(); renderCoach(); }));
+  v.querySelectorAll("[data-plan]").forEach(inp => inp.addEventListener("input", () => {
+    p[inp.dataset.plan] = inp.value; save();
+    $("#plan-check").innerHTML = planCheckHtml(p);
+    $("#plan-count").textContent = planChecks(p).filter(c => c[0]).length + " von 6";
+  }));
+  const bind = (id, f) => { const b = $(id); if (b) b.addEventListener("click", f); };
+  bind("#cheat-open", () => { coachCheat = true; dayLog().fall = 1; save(); renderCoach(); window.scrollTo(0, 0); });
+  bind("#cheat-back", () => { coachCheat = false; renderCoach(); });
+  bind("#cheat-print", () => { try { window.print(); } catch (e) {} });
+  const go = n => { coachPos = (n + COACH_Q.length) % COACH_Q.length; coachShow = false; renderCoach(); window.scrollTo(0, 0); const t = $("#qtext"); if (t) t.focus({preventScroll: true}); };
+  bind("#coach-show", () => { coachShow = true; renderCoach(); });
+  bind("#coach-prev", () => go(coachPos - 1));
+  bind("#coach-next", () => go(coachPos + 1));
+  v.querySelectorAll("[data-rate]").forEach(b => b.addEventListener("click", () => { rated[coachPos] = b.dataset.rate; dayLog().fall = 1; save(); go(coachPos + 1); }));
+  if (coachTab === "fragen") {
+    bindVoice(v, renderCoach);
+    const cq = COACH_Q[coachPos];
+    if (coachShow) speakOnce("coach:" + coachPos + ":a", () => ["Musterantwort.", ...cq.a]);
+    else speakOnce("coach:" + coachPos + ":q", () => [cq.q]);
+  }
+}
+const planCheckHtml = p => planChecks(p).map(([ok, t]) => `<div class="small ${ok ? "ok-t" : "muted"}">${ok ? "✓" : "○"} ${esc(t)}</div>`).join("");
+function restartCase(c) {
+  const sc = caseScore(c);
+  if (sc.done) { S.best = S.best || {}; const pct = Math.round(sc.got / c.tasks.reduce((n, t) => n + t.p, 0) * 100); if (S.best[c.id] == null || pct > S.best[c.id]) S.best[c.id] = pct; }
+  c.tasks.forEach((t, i) => { delete S.cases[c.id + "-" + i]; delete S.answers[c.id + "-" + i]; });
+  if (c.varies) S.seeds[c.id] = 1 + Math.floor(Math.random() * 2147483646);
+  confirmRestart = null; save(); CASES = buildCases(); renderFaelle(); window.scrollTo(0, 0);
+}
+function caseNote(sc) {
+  return `${sc.done} von ${sc.total} Aufgaben geprüft${sc.done ? " · " + (sc.got >= sc.max / 2 ? '<b class="ok-t">bestanden</b>' : '<b class="no-t">noch nicht bestanden</b>') : ""}. Bestanden ab der Hälfte der Punkte.`;
+}
+function fmtAnswer(n) {   // richtige Lösung mit passenden Nachkommastellen und Einheit
+  if (n.u === "€") return eur(n.a);
+  const d = Math.min(2, (String(n.a).split(".")[1] || "").length);
+  return num(n.a, d) + " " + n.u;
+}
+function renderTask(c, t, i) {
+  const k = c.id + "-" + i, r = S.cases[k], done = r && r.done;
+  const hasText = (t.groups || []).length > 0;
+  const nums = (t.nums || []).map((n, ni) => {
+    const id = `n-${k}-${ni}`, val = ((r || {}).nums || {})[ni] ?? "";   // auch ungeprüfte Zahlen bleiben stehen
+    const ok = numOk(n, val);
+    return `<div class="numrow ${done ? (ok ? "right" : "wrong") : ""}">
+      <label for="${id}">${esc(n.l)}</label>
+      <div class="answer">
+        ${n.u === "€" ? `<button type="button" class="sign" data-sign="${id}" aria-label="Minus davor setzen oder entfernen">±</button>` : ""}
+        <input type="text" inputmode="decimal" id="${id}" data-num="${k}|${ni}" value="${esc(val)}" placeholder="Ergebnis" autocomplete="off">
+        <span class="unit">${n.u}</span></div>
+      ${done ? `<div class="small ${ok ? "ok-t" : "no-t"}">${ok ? "✓ Richtig" : (String(val).trim() ? "✗ Nicht ganz. " : "Nichts eingetragen. ") + "Richtig wäre " + fmtAnswer(n)}</div>` : ""}
+    </div>`; }).join("");
+  const write = hasText ? `<label class="small" for="ans-${k}"><b>${t.nums ? "Und jetzt in Worten:" : "Deine Antwort"}</b> Stichpunkte reichen.</label>
+    <textarea id="ans-${k}" data-k="${k}" placeholder="Schreib hier deine Antwort.">${esc(S.answers[k] || "")}</textarea>` : "";
+
+  let result = "";
+  if (done) {
+    const score = taskScore(t, r), full = score === t.p;
+    const found = hasText ? Object.keys(r.auto || {}).length : 0;
+    const groups = hasText ? (t.groups || []).map((g, gi) => `
+      <fieldset class="checks"><legend>${esc(g.g)}</legend>
+        ${g.items.map((it, ii) => { const key = gi + "-" + ii, auto = (r.auto || {})[key];
+          return `<label class="check ${auto ? "auto" : ""}"><input type="checkbox" data-tick="${k}|${key}" ${isTicked(r, key) ? "checked" : ""}><span>${esc(it[0])}${auto ? ' <em class="found">erkannt</em>' : ""}</span><span class="p">${it[1]} P.</span></label>`; }).join("")}
+      </fieldset>`).join("") : "";
+    result = `
+      <div id="res-${k}" class="result ${full ? "full" : ""}">
+        <b id="pts-${k}" class="total">${score} von ${t.p} Punkten</b>
+        <span class="small">${full ? "Alles richtig, stark!" : hasText
+          ? (found ? `In deinem Text wurde${found === 1 ? " eine richtige Antwort" : "n " + found + " richtige Antworten"} erkannt (grün markiert). Hast du noch etwas anderes aus der Liste geschrieben? Dann hake es an.` : "In deinem Text wurde nichts aus der Liste erkannt. Hake an, was du trotzdem genannt hast.")
+          : "Korrigiere die roten Felder und prüfe nochmal."}</span>
+      </div>
+      ${hasText && !full ? groups : ""}
+      ${t.scheme ? `<details class="solution"><summary><b>So wird gerechnet</b></summary>${schemeHtml(t)}</details>`
+        : t.way ? `<details class="solution"><summary><b>${(t.nums || []).some(n => n.u === "€" || n.u === "%") ? "So wird gerechnet" : "Erklärung"}</b></summary>${t.way.map(x => `<p>${esc(x)}</p>`).join("")}</details>` : ""}`;
+  }
+  return `
+    <div class="task" id="task-${k}">
+      <div class="task-h"><span>Aufgabe ${i + 1}</span><span class="pts">${t.p} Punkte</span></div>
+      <p>${esc(t.t)}</p>
+      ${nums}${write}
+      ${result}
+      <button class="btn ${done ? "ghost" : "accent"}" data-check="${k}">${done ? "Nochmal prüfen" : "Antwort prüfen"}</button>
+    </div>`;
+}
+
+/* ---------- Navigation ---------- */
+const RENDER = {heute: renderHeute, fragen: renderFragen, rechnen: renderRechnen, faelle: renderFaelle};
+function show(name, focusHead) {
+  document.querySelectorAll(".view").forEach(s => s.hidden = s.id !== "v-" + name);
+  document.querySelectorAll("nav.tabs button").forEach(b => b.dataset.v === name ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current"));
+  stopSpeak();
+  RENDER[name]();
+  window.scrollTo(0, 0);
+  // nach dem Reiterwechsel springt der Fokus auf den neuen Bereich (für Bildschirmleser und Tastatur)
+  if (focusHead) { const h = $("#v-" + name + " .view-h"); if (h) h.focus({preventScroll: true}); }
+}
+document.querySelectorAll("nav.tabs button").forEach(b => b.addEventListener("click", () => show(b.dataset.v, true)));
+const start = (location.hash || "").slice(1);
+show(RENDER[start] ? start : "heute");
+
+/* Offline-Modus, wenn die App von einer eigenen Adresse läuft (z. B. GitHub Pages; localhost zum Testen) */
+if (OWN_SITE && "serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
+  try { navigator.serviceWorker.register("sw.js").catch(() => {}); } catch (e) {}
+}
+</script>
+
+</body></html>

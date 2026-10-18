@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- App-Symbol: dunkles Feld, Zollstock-Gelb, „M“ für Meister -->
+  <rect width="512" height="512" rx="96" fill="#1d2a38"/>
+  <rect x="96" y="332" width="320" height="64" rx="8" fill="#e8b007"/>
+  <g fill="#1d2a38">
+    <rect x="128" y="332" width="10" height="28"/>
+    <rect x="176" y="332" width="10" height="18"/>
+    <rect x="224" y="332" width="10" height="28"/>
+    <rect x="272" y="332" width="10" height="18"/>
+    <rect x="320" y="332" width="10" height="28"/>
+    <rect x="368" y="332" width="10" height="18"/>
+  </g>
+  <path d="M136 300V120h52l68 96 68-96h52v180h-52V200l-68 92-68-92v100z" fill="#f3f4f1"/>
+</svg>
